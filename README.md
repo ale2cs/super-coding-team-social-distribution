@@ -10,10 +10,10 @@ Contributors / Licensing
 
 Authors:
     
-* Firstname Lastname
-* Firstname Lastname
-* Firstname Lastname
-* Firstname Lastname
-* Firstname Lastnmae
+* Brian Lu
+* Jan Chow
+* Andy Le
+* Liam Chen
+* Edlee Ducay
 
 Generally everything is LICENSE'D under the ______________.
