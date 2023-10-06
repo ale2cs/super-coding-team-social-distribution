@@ -16,4 +16,4 @@ Authors:
 * Liam Chen
 * Edlee Ducay
 
-Generally everything is LICENSE'D under the ______________.
+Generally everything is LICENSE'D under the GNU General Public License v3.0.
