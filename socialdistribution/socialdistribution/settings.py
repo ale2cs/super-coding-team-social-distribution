@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from pathlib import Path
-
+import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,8 +26,11 @@ SECRET_KEY = '^%_j_xn*)!c&8y=st^@^7hpl@98)6_rq6rl94v!9hzuqhb3qmk'
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
-
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = 'login'
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30
 # Application definition
 
 INSTALLED_APPS = [
