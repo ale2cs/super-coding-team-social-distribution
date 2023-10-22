@@ -23,7 +23,6 @@ from django.conf.urls.static import static
 from social.views import ChangePasswordView
 
 urlpatterns = [
-    #path('social/', include('social.urls')),
     path('admin/', admin.site.urls),
     path('', include('social.urls')),
     path('login/', CustomLoginView.as_view(redirect_authenticated_user=True, template_name='login.html', authentication_form=LoginUser), name='login'),
