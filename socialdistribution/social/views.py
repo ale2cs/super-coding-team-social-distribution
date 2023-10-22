@@ -14,6 +14,7 @@ from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
 from django.contrib.auth.views import PasswordChangeView
 from django.contrib.messages.views import SuccessMessageMixin
+from django.core.paginator import Paginator
 
 def home_page(request):
     return render(request, 'home.html')
@@ -142,15 +143,22 @@ class PostDetail(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
-    
 class PostList(APIView):
     def get(self, request, *args, **kwargs):
         """
         Get the recent posts from author AUTHOR_ID (paginated)
         TODO: Add pagination
         """
+        size = request.GET.get('size')
+        if not size:
+            size = 25
+        elif size == '0':
+            return Response("Invalid Query Parameter: Size = 0", status=400)
+        page = request.GET.get('page')
         posts = Post.objects.filter(models.Q(author__id=kwargs['author_id'])).order_by('-published')
-        serializer = PostSerializer(posts, many=True)
+        paginator = Paginator(posts, per_page=size)
+        page_object = paginator.get_page(page)
+        serializer = PostSerializer(page_object, many=True)
         return Response(serializer.data, status=201)
         
     def post(self, request, *args, **kwargs):
