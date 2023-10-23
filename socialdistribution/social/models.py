@@ -21,7 +21,7 @@ class Post(models.Model):
     description = models.CharField(max_length=200)
     contentType = models.CharField(max_length=200)
     content = models.CharField(max_length=200)
-    author = models.ForeignKey('Profile', on_delete=models.CASCADE, related_name="posts")
+    author = models.ForeignKey('Profile', on_delete=models.CASCADE, related_name="posts",default=None)
     # categories - figure out how to store these
     # count - number of comments
     # comments - url to comments
