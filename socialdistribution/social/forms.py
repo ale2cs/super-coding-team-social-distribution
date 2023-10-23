@@ -31,7 +31,7 @@ class RegisterUser(UserCreationForm):
                                                                 'class': 'form-control',
                                                                 }))
     
-    password = forms.CharField(max_length=100,
+    password1 = forms.CharField(max_length=100,
                                  required=True,
                                  widget=forms.TextInput(attrs={'placeholder': 'Password',
                                                                 'class': 'form-control',
@@ -39,7 +39,7 @@ class RegisterUser(UserCreationForm):
                                                                 'id': 'password',
                                                                 }))
     
-    confirm_password = forms.CharField(max_length=100,  # <--  this one can be removed if we don't want the functionality
+    password2 = forms.CharField(max_length=100,  # <--  this one can be removed if we don't want the functionality
                                  required=True,
                                  widget=forms.TextInput(attrs={'placeholder': 'Confirm Password',
                                                                 'class': 'form-control',
@@ -49,7 +49,7 @@ class RegisterUser(UserCreationForm):
     
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'username', 'email', 'password', 'confirm_password']
+        fields = ['first_name', 'last_name', 'username', 'email', 'password1', 'password2']
 
 class LoginUser(AuthenticationForm):
     username = forms.CharField(max_length=100,
