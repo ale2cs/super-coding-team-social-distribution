@@ -31,9 +31,12 @@ class Post(models.Model):
     unlisted = models.BooleanField(default=False)
     
 class Follower(models.Model):
-    host = models.CharField(max_length=200)
-    display =  models.CharField(max_length=200)
-    url = models.URLField(max_length=200)
-    github = models.CharField(max_length=200)
-    profile_image = models.IntegerField()
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='follow')
+    followers = models.ManyToManyField(Profile, related_name='followers', blank=True)
+
+class FriendFollowRequest(models.Model):
+    summary = models.CharField(max_length=200)
+    follower = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='follower')
+    followee = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='followee')
+
 
