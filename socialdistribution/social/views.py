@@ -1,8 +1,8 @@
 import json
 from django.db import models
 from rest_framework.views import APIView
-from .models import Post
-from .serializers import PostSerializer
+from .models import Post, Follower
+from .serializers import PostSerializer, FollowerSerializer
 from rest_framework.response import Response
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -173,3 +173,13 @@ class PostList(APIView):
             serializer.save()
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+
+class Followers(APIView):
+    def get(self, request, *args, **kwargs):
+        """
+        Returns list of followers from author AUTHOR_ID
+        """
+        author_id = kwargs['author_id']
+        author_followers = Follower.objects.filter(profile__id=author_id)
+        serializer = FollowerSerializer(author_followers, many=True)
+        return Response(serializer.data, status=201)
