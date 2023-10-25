@@ -40,3 +40,5 @@ class FriendFollowRequest(models.Model):
     followee = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='followee')
 
 
+class Image(models.Model):
+    upload = models.ImageField(upload_to='uploads/')
