@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %} Social Page {% endblock title%}
+{% block content %}
+{% if local_authors_list %}
+    <br>
+    <ul>
+    {% for author in local_authors_list %}
+        <li><a href="{% url 'profile-detail' author.id %}">{{ author }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No authors are available.</p>
+{% endif %}
+{% endblock content %}

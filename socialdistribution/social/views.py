@@ -1,12 +1,12 @@
 import json
 from django.db import models
 from rest_framework.views import APIView
-from .models import Post, Follower
-from .serializers import PostSerializer, FollowerSerializer
+from .models import Profile, Post, Follower
+from .serializers import ProfileSerializer, PostSerializer, FollowerSerializer
 from rest_framework.response import Response
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.views import View
+from django.views import View, generic
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from .forms import RegisterUser, LoginUser, UpdateUserForm, UpdateProfileForm
@@ -15,6 +15,8 @@ from django.urls import reverse_lazy
 from django.contrib.auth.views import PasswordChangeView
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.paginator import Paginator
+from rest_framework.decorators import api_view
+
 
 def home_page(request):
     return render(request, 'home.html')
@@ -86,6 +88,21 @@ def profile(request):
         profile_form = UpdateProfileForm(instance=request.user.profile)
 
     return render(request, 'profile.html', {'user_form': user_form, 'profile_form': profile_form})
+
+
+class SocialView(generic.ListView):
+    template_name = 'social.html'
+    context_object_name = 'local_authors_list'
+
+    def get_queryset(self):
+        """Return the last five published questions."""
+        return Profile.objects.all()
+
+
+class ProfileView(generic.DetailView):
+    model = Profile
+    template_name = 'author.html'
+
     
 class PostDetail(APIView):
     def get(self, request, *args, **kwargs):
