@@ -22,11 +22,26 @@ from django.conf import settings
 from django.conf.urls.static import static
 from social.views import ChangePasswordView
 
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+from rest_framework import permissions
+
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title="Social Distribution",
+        default_version='v1'
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,)
+)
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('social.urls')),
     path('login/', CustomLoginView.as_view(redirect_authenticated_user=True, template_name='login.html', authentication_form=LoginUser), name='login'),
     path('logout/', auth_views.LogoutView.as_view(template_name='logout.html'), name='logout'),
     path('password-change/', ChangePasswordView.as_view(), name='password_change'),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui')
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

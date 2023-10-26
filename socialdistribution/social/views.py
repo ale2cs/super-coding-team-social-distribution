@@ -16,6 +16,7 @@ from django.contrib.auth.views import PasswordChangeView
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.paginator import Paginator
 from rest_framework.decorators import api_view
+from drf_yasg.utils import swagger_auto_schema
 
 
 def home_page(request):
@@ -116,6 +117,7 @@ class PostDetail(APIView):
         except Post.DoesNotExist:
             return Response(status=404)
         
+    @swagger_auto_schema( request_body=PostSerializer)
     def post(self, request, *args, **kwargs):
         """
         Update the post whose id is POST_ID (must be authenticated)
@@ -145,6 +147,7 @@ class PostDetail(APIView):
         except Post.DoesNotExist:
             return Response("Post not found", status=404)
         
+    @swagger_auto_schema( request_body=PostSerializer)
     def put(self, request, *args, **kwargs):
         """
         Create a post where its id is POST_ID
@@ -178,6 +181,7 @@ class PostList(APIView):
         serializer = PostSerializer(page_object, many=True)
         return Response(serializer.data, status=201)
         
+    @swagger_auto_schema( request_body=PostSerializer)
     def post(self, request, *args, **kwargs):
         """
         Create a new post but generate a new id
