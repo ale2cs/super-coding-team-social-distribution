@@ -19,6 +19,8 @@ from rest_framework.decorators import api_view
 
 
 def home_page(request):
+    if request.user.is_authenticated:
+        pass
     return render(request, 'home.html')
 
 class CustomLoginView(LoginView):
