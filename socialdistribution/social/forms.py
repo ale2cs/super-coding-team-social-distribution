@@ -1,7 +1,7 @@
 from django import forms 
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-from .models import Profile
+from .models import Profile, Post
 
 # contains different forms that the user interacts with
 # e.g the registration form/screen, update user, posts, comments, etc.
@@ -90,3 +90,29 @@ class UpdateProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = ['avatar', 'bio']
+
+class CreatePostForm(forms.ModelForm):
+
+    title = forms.CharField(max_length=100,
+                                 required=True,
+                                 widget=forms.TextInput(attrs={'placeholder': 'Title',
+                                                                'class': 'form-control',
+                                                                }),
+                                                                label="",
+                                                                )
+
+    description = forms.CharField(required=True, 
+                           widget=forms.widgets.Textarea(attrs={'placeholder': 'Enter your text here',
+                                                                'class': 'form-control',
+                                                                }),
+                                                                label="",
+                                                                )
+
+    visibility = forms.ChoiceField(required=True, choices=(('public', 'PUBLIC'), ('friends', 'FRIENDS')))
+
+    unlisted = forms.BooleanField(required=False)
+
+    
+    class Meta:
+        model = Post
+        fields = ['title', 'description', 'visibility', 'unlisted']

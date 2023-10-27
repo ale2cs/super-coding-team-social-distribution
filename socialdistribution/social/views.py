@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.views import View, generic
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from .forms import RegisterUser, LoginUser, UpdateUserForm, UpdateProfileForm
+from .forms import RegisterUser, LoginUser, UpdateUserForm, UpdateProfileForm, CreatePostForm
 from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
 from django.contrib.auth.views import PasswordChangeView
@@ -21,8 +21,19 @@ from drf_yasg.utils import swagger_auto_schema
 
 def home_page(request):
     if request.user.is_authenticated:
-        pass
-    return render(request, 'home.html')
+        posts = Post.objects.all().order_by("-published")
+        form = CreatePostForm(request.POST or None)
+        if request.method == "POST":
+            if form.is_valid():
+                post = form.save(commit=False)
+                post.author = request.user.profile
+                post.save()
+                messages.success(request, ("Post created successfully!"))
+                return redirect('home')
+        return render(request, 'home.html', {"posts":posts, "form":form})
+
+    posts = Post.objects.all().order_by("-published")
+    return render(request, 'home.html', {"posts":posts})
 
 class CustomLoginView(LoginView):
     form_class = LoginUser
