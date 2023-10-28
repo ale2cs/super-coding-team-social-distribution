@@ -1,7 +1,7 @@
 import json
 from django.db import models
 from rest_framework.views import APIView
-from .models import Profile, Post, Follower
+from .models import Profile, Post, Follower, FriendFollowRequest
 from .serializers import ProfileSerializer, PostSerializer, FollowerSerializer
 from rest_framework.response import Response
 from django.shortcuts import render, redirect
@@ -104,18 +104,31 @@ def profile(request):
     return render(request, 'profile.html', {'user_form': user_form, 'profile_form': profile_form})
 
 
-class SocialView(generic.ListView):
-    template_name = 'social.html'
-    context_object_name = 'local_authors_list'
+@login_required
+def profile_list(request):
+    profiles = Profile.objects.exclude(user=request.user)
+    return render(request, 'social.html', {"profiles":profiles})
 
-    def get_queryset(self):
-        """Return the last five published questions."""
-        return Profile.objects.all()
+@login_required
+def profile_detail(request, pk):
+    if request.user.is_authenticated:
+        profile = Profile.objects.get(user_id=pk)
+        follow = Follower.objects.get(profile=profile)
+        user_profile = request.user.profile
+        user_follow = Follower.objects.get(profile=user_profile)           
+        print('HERE')
 
+        # Post form logic
+        if request.method == "POST":
+            print('yerrr')
+            action = request.POST['follow']
+            if action == "unfollow":
+                user_follow.followers.remove(profile)
+            elif action == "follow":
+                user_follow.followers.add(profile)
+            user_follow.save()
 
-class ProfileView(generic.DetailView):
-    model = Profile
-    template_name = 'author.html'
+        return render(request, 'other_profiles.html', {'profile':profile, 'follow':follow, 'user_follow':user_follow})
 
     
 class PostDetail(APIView):
@@ -214,6 +227,6 @@ class Followers(APIView):
         Returns list of followers from author AUTHOR_ID
         """
         author_id = kwargs['author_id']
-        author_followers = Follower.objects.filter(profile__id=author_id)
+        author_followers = Followers.objects.filter(profile__id=author_id)
         serializer = FollowerSerializer(author_followers, many=True)
         return Response(serializer.data, status=201)

@@ -31,8 +31,8 @@ class Post(models.Model):
     unlisted = models.BooleanField(default=False)
     
 class Follower(models.Model):
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='follow')
-    followers = models.ManyToManyField(Profile, related_name='followers', blank=True)
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='profile')
+    followers = models.ManyToManyField(Profile, related_name='followed_by', symmetrical=False, blank=True)
 
 class FriendFollowRequest(models.Model):
     summary = models.CharField(max_length=200)
