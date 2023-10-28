@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+    <br>
+    <div class="container text-center">
+        <div class="row align-items-center">
+            <div class="col-1">
+                <h1 class="m-0">{{ profile.user.username }}</h1>
+            </div>
+            <div class="col-1">
+                <!-- Only show follow button if not users profile -->
+                {% if user.profile != profile %}
+                <form method="POST">
+                    {% csrf_token %}
+                    {% if profile in user_follow.following.all %}
+                    <button type="submit" name="follow" value="unfollow" class="btn btn-danger">Unfollow</button>
+                    {% else %}
+                    <button type="submit" name="follow" value="follow" class="btn btn-success">Follow</button>
+                    {% endif %}
+                </form>
+                {% endif %}
+            </div>
+            <div class="col-3 offset-md-4">
+                <div class="card">
+                    <h5 class="card-header">Following</h5>
+                    <div class="card-body">
+                    {% if follow.following.all %}
+                        {% for following in follow.following.all %}
+                        <a href="{% url 'profile_detail' following.user.id %}" class="link-primary">{{ following }}</a>
+                        <br/>
+                        {% endfor%}
+                    {% else %}
+                        <p>Not following anyone :(</p>
+                    {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="card">
+                    <h5 class="card-header">Followers</h5>
+                    <div class="card-body">
+                    {% if profile.followed_by.all %}
+                        {% for following in profile.followed_by.all %}
+                        <a href="{% url 'profile_detail' following.id %}" class="link-primary">{{ following.profile }}</a>
+                        <br/>
+                        {% endfor%}
+                    {% else %}
+                    <p>No followers :(</p>
+                    {% endif %}
+                    </div>
+                </div> 
+            </div>
+        </div>
+    </div>
+    <div class="row my-3 p-3">
+        <img class="rounded-circle account-img" src="{{ profile.avatar.url }} " style="cursor: pointer;" width="500" height="600"/>
+    </div>
+    {% if user_form.errors %}
+    <div class="alert alert-danger alert-dismissible" role="alert">
+        <div id="form_errors">
+            {% for key, value in user_form.errors.items %}
+                <strong>{{ value }}</strong>
+            {% endfor %}
+        </div>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endif %}
+
+    <div class="alert alert-light">
+        <h2>Bio:</h2>
+        <p>{{profile.bio}}</p>
+    </div>
+{% endblock content %}

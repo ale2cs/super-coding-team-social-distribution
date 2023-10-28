@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %} Social Page {% endblock title%}
+{% block title %} Friends Page {% endblock title%}
 {% block content %}
 <br/>
 <div class="jumbotron text-center">
-    <h1 class="display-4 pt-2">Local Authors</h1>
+    <h1 class="display-4 pt-2">Friends</h1>
     <p class="lead">
-        List of authors on this site
+        List of all your friends
     </p>
     <hr class="my-4">
 </div>
@@ -24,6 +24,6 @@
     {% endfor %}
     </div>
 {% else %}
-    <p>No authors are available.</p>
+    <p>No Friends :(</p>
 {% endif %}
 {% endblock content %}

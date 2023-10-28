@@ -1,7 +1,8 @@
 import json
 from django.db import models
+from django.db.models import Q
 from rest_framework.views import APIView
-from .models import Profile, Post, Follower
+from .models import Profile, Post, Follower, FriendFollowRequest
 from .serializers import ProfileSerializer, PostSerializer, FollowerSerializer
 from rest_framework.response import Response
 from django.shortcuts import render, redirect
@@ -21,7 +22,12 @@ from drf_yasg.utils import swagger_auto_schema
 
 def home_page(request):
     if request.user.is_authenticated:
-        posts = Post.objects.all().order_by("-published")
+        follow = Follower.objects.get(profile=request.user.profile)
+        friends = follow.get_friends()
+        own_post = Q(author=request.user.profile)
+        is_public = Q(Q(visibility="public"), Q(unlisted=False))
+        is_friend_post = Q(Q(visibility="friends"), Q(author__in=friends))
+        posts = Post.objects.all().filter(own_post | is_public | is_friend_post).order_by("-published")
         form = CreatePostForm(request.POST or None)
         if request.method == "POST":
             if form.is_valid():
@@ -104,18 +110,37 @@ def profile(request):
     return render(request, 'profile.html', {'user_form': user_form, 'profile_form': profile_form})
 
 
-class SocialView(generic.ListView):
-    template_name = 'social.html'
-    context_object_name = 'local_authors_list'
+@login_required
+def profile_list(request):
+    profiles = Profile.objects.exclude(user=request.user)
+    return render(request, 'social.html', {"profiles":profiles})
 
-    def get_queryset(self):
-        """Return the last five published questions."""
-        return Profile.objects.all()
+@login_required
+def profile_detail(request, pk):
+    if request.user.is_authenticated:
+        profile = Profile.objects.get(user_id=pk)
+        follow = Follower.objects.get(profile=profile)
+        user_profile = request.user.profile
+        user_follow = Follower.objects.get(profile=user_profile)           
 
+        # Post form logic
+        if request.method == "POST":
+            action = request.POST['follow']
+            if action == "unfollow":
+                user_follow.following.remove(profile)
+            elif action == "follow":
+                user_follow.following.add(profile)
+            user_follow.save()
 
-class ProfileView(generic.DetailView):
-    model = Profile
-    template_name = 'author.html'
+        return render(request, 'other_profiles.html', {'profile':profile, 'follow':follow, 'user_follow':user_follow})
+
+@login_required
+def friends_list(request):
+    follow = Follower.objects.get(profile=request.user.profile)
+    profiles = follow.get_friends()
+    
+    return render(request, 'friends.html', {'profiles':profiles})
+
 
     
 class PostDetail(APIView):
@@ -214,6 +239,6 @@ class Followers(APIView):
         Returns list of followers from author AUTHOR_ID
         """
         author_id = kwargs['author_id']
-        author_followers = Follower.objects.filter(profile__id=author_id)
+        author_followers = Followers.objects.filter(profile__id=author_id)
         serializer = FollowerSerializer(author_followers, many=True)
         return Response(serializer.data, status=201)
