@@ -123,9 +123,9 @@ def profile_detail(request, pk):
             print('yerrr')
             action = request.POST['follow']
             if action == "unfollow":
-                user_follow.followers.remove(profile)
+                user_follow.following.remove(profile)
             elif action == "follow":
-                user_follow.followers.add(profile)
+                user_follow.following.add(profile)
             user_follow.save()
 
         return render(request, 'other_profiles.html', {'profile':profile, 'follow':follow, 'user_follow':user_follow})

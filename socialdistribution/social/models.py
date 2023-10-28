@@ -32,7 +32,10 @@ class Post(models.Model):
     
 class Follower(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='profile')
-    followers = models.ManyToManyField(Profile, related_name='followed_by', symmetrical=False, blank=True)
+    following = models.ManyToManyField(Profile, related_name='followed_by', symmetrical=False, blank=True)
+
+    def get_friends(self):
+        friends = self.followers.all()
 
 class FriendFollowRequest(models.Model):
     summary = models.CharField(max_length=200)

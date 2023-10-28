@@ -7,21 +7,24 @@
                 <h1 class="m-0">{{ profile.user.username }}</h1>
             </div>
             <div class="col-1">
+                <!-- Only show follow button if not users profile -->
+                {% if user.profile != profile %}
                 <form method="POST">
                     {% csrf_token %}
-                    {% if profile in user_follow.followers.all %}
+                    {% if profile in user_follow.following.all %}
                     <button type="submit" name="follow" value="unfollow" class="btn btn-danger">Unfollow</button>
                     {% else %}
                     <button type="submit" name="follow" value="follow" class="btn btn-success">Follow</button>
                     {% endif %}
                 </form>
+                {% endif %}
             </div>
             <div class="col-3 offset-md-4">
                 <div class="card">
                     <h5 class="card-header">Following</h5>
                     <div class="card-body">
-                    {% if follow.followers.all %}
-                        {% for following in follow.followers.all %}
+                    {% if follow.following.all %}
+                        {% for following in follow.following.all %}
                         <a href="{% url 'profile_detail' following.user.id %}" class="link-primary">{{ following }}</a>
                         <br/>
                         {% endfor%}
@@ -33,7 +36,7 @@
             </div>
             <div class="col-3">
                 <div class="card">
-                    <h5 class="card-header">Following</h5>
+                    <h5 class="card-header">Followers</h5>
                     <div class="card-body">
                     {% if profile.followed_by.all %}
                         {% for following in profile.followed_by.all %}
