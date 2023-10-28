@@ -35,7 +35,11 @@ class Follower(models.Model):
     following = models.ManyToManyField(Profile, related_name='followed_by', symmetrical=False, blank=True)
 
     def get_friends(self):
-        friends = self.followers.all()
+        following = set(self.following.all())
+        follow = self.profile.followed_by.all()  # Follower objects
+        followers = (follower.profile for follower in follow)
+        friends = list(following.intersection(followers))
+        return friends
 
 class FriendFollowRequest(models.Model):
     summary = models.CharField(max_length=200)

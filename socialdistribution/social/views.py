@@ -116,11 +116,9 @@ def profile_detail(request, pk):
         follow = Follower.objects.get(profile=profile)
         user_profile = request.user.profile
         user_follow = Follower.objects.get(profile=user_profile)           
-        print('HERE')
 
         # Post form logic
         if request.method == "POST":
-            print('yerrr')
             action = request.POST['follow']
             if action == "unfollow":
                 user_follow.following.remove(profile)
@@ -129,6 +127,14 @@ def profile_detail(request, pk):
             user_follow.save()
 
         return render(request, 'other_profiles.html', {'profile':profile, 'follow':follow, 'user_follow':user_follow})
+
+@login_required
+def friends_list(request):
+    follow = Follower.objects.get(profile=request.user.profile)
+    profiles = follow.get_friends()
+    
+    return render(request, 'friends.html', {'profiles':profiles})
+
 
     
 class PostDetail(APIView):
