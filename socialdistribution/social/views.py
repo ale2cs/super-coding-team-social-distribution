@@ -1,5 +1,6 @@
 import json
 from django.db import models
+from django.db.models import Q
 from rest_framework.views import APIView
 from .models import Profile, Post, Follower, FriendFollowRequest
 from .serializers import ProfileSerializer, PostSerializer, FollowerSerializer
@@ -21,7 +22,12 @@ from drf_yasg.utils import swagger_auto_schema
 
 def home_page(request):
     if request.user.is_authenticated:
-        posts = Post.objects.all().order_by("-published")
+        follow = Follower.objects.get(profile=request.user.profile)
+        friends = follow.get_friends()
+        own_post = Q(author=request.user.profile)
+        is_public = Q(Q(visibility="public"), Q(unlisted=False))
+        is_friend_post = Q(Q(visibility="friends"), Q(author__in=friends))
+        posts = Post.objects.all().filter(own_post | is_public | is_friend_post).order_by("-published")
         form = CreatePostForm(request.POST or None)
         if request.method == "POST":
             if form.is_valid():
