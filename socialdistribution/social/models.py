@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 # Create your models here.
 class Profile(models.Model):
+    id = models.CharField(default=uuid.uuid4, editable=False, primary_key=True, max_length=200)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     avatar = models.ImageField(default='default.jpg', upload_to='profile_images')
