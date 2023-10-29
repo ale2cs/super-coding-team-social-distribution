@@ -2,8 +2,8 @@ import json
 from django.db import IntegrityError, models
 from django.db.models import Q
 from rest_framework.views import APIView
-from .models import Profile, Post, Follower, FriendFollowRequest
-from .serializers import ProfileSerializer, PostSerializer, FollowerSerializer
+from .models import Profile, Post, Follower, FriendFollowRequest, Likes
+from .serializers import ProfileSerializer, PostSerializer, FollowerSerializer, LikesSerializer
 from rest_framework.response import Response
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -18,6 +18,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.core.paginator import Paginator
 from rest_framework.decorators import api_view
 from drf_yasg.utils import swagger_auto_schema
+from django.shortcuts import get_object_or_404
 
 
 def home_page(request):
@@ -41,6 +42,19 @@ def home_page(request):
     posts = Post.objects.all().order_by("-published")
     return render(request, 'home.html', {"posts":posts})
 
+def post_like(request, pk):
+    if request.user.is_authenticated:
+        if request.method == "POST":
+            like = Likes.object()
+            like.summary = request.user.username + " Likes your post"
+            #like.author, need to figure out how to connect the liked post to the post author
+            #like.object, need to figure out how to connect the liked post link to the like
+            messages.success(request, ("You have liked the post!"))
+            return redirect('home')
+    else:
+        messages.success(request, ("You must be logged in to like a post."))
+        return redirect('home')
+        
 class CustomLoginView(LoginView):
     form_class = LoginUser
 
@@ -246,4 +260,14 @@ class Followers(APIView):
         author_id = kwargs['author_id']
         author_followers = Followers.objects.filter(profile__id=author_id)
         serializer = FollowerSerializer(author_followers, many=True)
+        return Response(serializer.data, status=201)
+    
+class Likes(APIView):
+    def get(self, request, *args, **kwargs):
+        """
+        Returns notifications of likes for AUTHOR_ID
+        """
+        author_id = kwargs['author_id']
+        author_likes = Likes.objects.filter(profile_id=author_id)
+        serializer = LikesSerializer(author_likes, many=True)
         return Response(serializer.data, status=201)
