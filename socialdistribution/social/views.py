@@ -1,5 +1,5 @@
 import json
-from django.db import models
+from django.db import IntegrityError, models
 from django.db.models import Q
 from rest_framework.views import APIView
 from .models import Profile, Post, Follower, FriendFollowRequest
@@ -140,8 +140,6 @@ def friends_list(request):
     profiles = follow.get_friends()
     
     return render(request, 'friends.html', {'profiles':profiles})
-
-
     
 class PostDetail(APIView):
     def get(self, request, *args, **kwargs):
@@ -190,16 +188,18 @@ class PostDetail(APIView):
         """
         Create a post where its id is POST_ID
         """
-        request_data = json.loads(request.body.decode("utf-8"))
-        new_instance = Post()
-        new_instance.id = kwargs['post_id']
-        request_data['author'] = kwargs['author_id']
-        serializer = PostSerializer(new_instance, data=request_data)
-        
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+        try:
+            request_data = json.loads(request.body.decode("utf-8"))
+            new_instance = Post()
+            new_instance.id = kwargs['post_id']
+            request_data['author'] = kwargs['author_id']
+            serializer = PostSerializer(new_instance, data=request_data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=201)
+            return Response(serializer.errors, status=400)
+        except IntegrityError as e:
+            return Response({"error": f"Post with id '{new_instance.id}' already exists"}, status=400)
     
 class PostList(APIView):
     def get(self, request, *args, **kwargs):
@@ -208,16 +208,21 @@ class PostList(APIView):
         TODO: Add pagination
         """
         size = request.GET.get('size')
+        page = request.GET.get('page')
+        if size == '0':
+            return Response({'error': "Invalid Query Parameter: Size = 0"}, status=400)
+        elif page is not None and not page.isdigit():
+            return Response({'error': f"Invalid Query Parameter: Page '{page}'"}, status=400)
+        elif size is not None and not size.isdigit():
+            return Response({'error': f"Invalid Query Parameter: Size '{size}'"}, status=400)
+
         if not size:
             size = 25
-        elif size == '0':
-            return Response("Invalid Query Parameter: Size = 0", status=400)
-        page = request.GET.get('page')
         posts = Post.objects.filter(models.Q(author__id=kwargs['author_id'])).order_by('-published')
         paginator = Paginator(posts, per_page=size)
         page_object = paginator.get_page(page)
         serializer = PostSerializer(page_object, many=True)
-        return Response(serializer.data, status=201)
+        return Response(serializer.data, status=200)
         
     @swagger_auto_schema( request_body=PostSerializer)
     def post(self, request, *args, **kwargs):
