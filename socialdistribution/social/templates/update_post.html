@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %} Update Post {% endblock title%}
+{% block content %}
+    <div class="container text-center">
+
+    <div class="jumbotron">
+        <h1 class="display-4 pt-2">Editing Post</h1>
+        <hr class="my-4">
+    </div>
+
+    <form method=POST>
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <button type="submit" class="btn btn-secondary">Post</button>
+    </form>
+{% endblock content %}
