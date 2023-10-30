@@ -55,6 +55,26 @@ def post_like(request, pk):
         messages.success(request, ("You must be logged in to like a post."))
         return redirect('home')
         
+def edit_post(request, post_id):
+    post = Post.objects.get(id=post_id)
+    form = CreatePostForm(request.POST or None, instance=post)
+    if request.method == "POST":
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.author = request.user.profile
+            post.save()
+            messages.success(request, ("Post updated successfully!"))
+            return redirect('home')
+    return render(request, 'update_post.html', {"post": post, "form": form})
+    
+def delete_post(request, post_id):
+    post = Post.objects.get(id=post_id)
+    if request.method == "POST":
+        post.delete()
+        messages.success(request, ("Post deleted successfully!"))
+        return redirect('home')
+    return render(request, "delete_post.html", {"post": post})
+
 class CustomLoginView(LoginView):
     form_class = LoginUser
 

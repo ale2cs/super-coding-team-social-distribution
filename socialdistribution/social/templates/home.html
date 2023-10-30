@@ -22,6 +22,11 @@
             </small>
             <strong>{{ post.title }}</strong><br/>
             {{ post.description }}
+            <br/>
+            {% if post.author.id == request.user.profile.id %}
+            <a href="{% url 'edit_post' post.id %}" class="btn btn-primary text-decoration-none">Edit</a>
+            <a href="{% url 'delete_post' post.id %}" class="btn btn-danger text-decoration-none">Delete</a>
+            {% endif %}
         </div><br/>
 
     {% endfor %}
