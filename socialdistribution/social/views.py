@@ -255,12 +255,62 @@ class PostList(APIView):
 class Followers(APIView):
     def get(self, request, *args, **kwargs):
         """
-        Returns list of followers from author AUTHOR_ID
+        Returns list of authors who are AUTHOR_ID's followers
         """
         author_id = kwargs['author_id']
-        author_followers = Followers.objects.filter(profile__id=author_id)
-        serializer = FollowerSerializer(author_followers, many=True)
-        return Response(serializer.data, status=201)
+        follow = Follower.objects.get(profile__id=author_id)
+        followers = follow.get_followers()
+        serializer = ProfileSerializer(followers, many=True)
+        return Response(serializer.data, status=200)
+
+
+class FollowersAction(APIView):
+    def get(self, request, *args, **kwargs):
+        """
+        Returns if FOREIGN_AUTHOR_ID is a follower of AUTHOR_ID
+        """
+        author_id = kwargs['author_id']
+        foreign_author_id = kwargs['foreign_author_id']
+        follow = Follower.objects.get(profile__id=author_id)
+        followers = follow.get_followers()
+        foreign_profile = Profile.objects.get(id=foreign_author_id)
+        is_follower = foreign_profile in followers
+        response_data = {'is_follower': is_follower}
+        return Response(response_data, status=200)
+
+    def put(self, request, *args, **kwargs):
+        """
+        Add FOREIGN_AUTHOR_ID as a follower of AUTHOR_ID
+        TODO: Must be authenticated
+        """
+        author_id = kwargs['author_id']
+        foreign_author_id = kwargs['foreign_author_id']
+        follow = Follower.objects.get(profile__id=foreign_author_id)
+        foreign_following = follow.following
+        author_profile = Profile.objects.get(id=author_id)
+
+        if author_profile not in foreign_following.all():
+            follow.following.add(author_profile)
+            return Response({'message': 'Now following.'}, status=200)
+        else:
+            return Response({'message': 'Already following.'}, status=200)
+
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Remove FOREIGN_AUTHOR_ID as a follower of AUTHOR_ID
+        """
+        author_id = kwargs['author_id']
+        foreign_author_id = kwargs['foreign_author_id']
+        follow = Follower.objects.get(profile__id=foreign_author_id)
+        foreign_following = follow.following
+        author_profile = Profile.objects.get(id=author_id)
+
+        if author_profile in foreign_following.all():
+            foreign_following.remove(author_profile)
+            return Response({'message': 'Now unfollowed'}, status=200)
+        else:
+            return Response({'message': 'Cannot unfollow, not following.'}, status=200)
     
 class Likes(APIView):
     def get(self, request, *args, **kwargs):
@@ -270,4 +320,4 @@ class Likes(APIView):
         author_id = kwargs['author_id']
         author_likes = Likes.objects.filter(profile_id=author_id)
         serializer = LikesSerializer(author_likes, many=True)
-        return Response(serializer.data, status=201)
+        return Response(serializer.data, status=200)
