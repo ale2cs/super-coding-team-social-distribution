@@ -15,4 +15,5 @@ urlpatterns = [
     path('service/authors/<str:author_id>/posts/<str:post_id>', views.PostDetail.as_view(), name='post-detail'),
     path('service/authors/<str:author_id>/posts', views.PostList.as_view(), name='post-list'),
     path('service/authors/<str:author_id>/followers', views.Followers.as_view(), name='followers'),
+    path('view_post/<str:post_id>', views.view_post, name='view_post')
 ]
