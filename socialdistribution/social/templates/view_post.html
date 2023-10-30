@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %} View Post {% endblock title%}
+{% block content %}
+    <div class="container text-center">
+
+    <div class="jumbotron">
+        <h1 class="display-4 pt-2">View Post</h1>
+        <hr class="my-4">
+    </div>
+
+    <div class="alert alert-light" role="alert">
+        <div class="position-absolute top-0 end-0">
+            <small class="text-muted">
+                Likes: {{likes}}
+            </small>
+        </div>
+        <small class="text-muted">
+            {{ post.author }} ({{ post.published }})<br/>
+        </small>
+        <strong>{{ post.title }}</strong><br/>
+        {{ post.description }}
+    </div><br/>
+
+    <form method=POST>
+        {% csrf_token %}
+        {% if liked %}
+        <button type="submit" name="like" value="unlike" class="btn btn-danger">Unlike</button>
+        {% else %}
+        <button type="submit" name="like" value="like" class="btn btn-success btn-outline-primary">Like</button>
+        {% endif %}
+    </form>
+{% endblock content %}

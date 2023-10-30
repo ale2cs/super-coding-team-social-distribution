@@ -47,13 +47,14 @@ class FriendFollowRequest(models.Model):
     follower = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='follower')
     followee = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='followee')
 
-class Likes(models.Model):
+class Like(models.Model):
     summary = models.CharField(max_length=200)
-    author = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='author')
+    author = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, blank=True, null=True, on_delete=models.CASCADE)
     object = models.CharField(max_length=200)
 
 class Liked(models.Model):
-    likedPosts = models.ManyToManyField(Likes, related_name="liked_posts", symmetrical=False, blank=True)
+    likedPosts = models.ManyToManyField(Like, related_name="liked_posts", symmetrical=False, blank=True)
 
 class Image(models.Model):
     upload = models.ImageField(upload_to='uploads/')

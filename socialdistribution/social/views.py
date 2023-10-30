@@ -2,8 +2,8 @@ import json
 from django.db import IntegrityError, models
 from django.db.models import Q
 from rest_framework.views import APIView
-from .models import Profile, Post, Follower, FriendFollowRequest, Likes
-from .serializers import ProfileSerializer, PostSerializer, FollowerSerializer, LikesSerializer
+from .models import Profile, Post, Follower, FriendFollowRequest, Like
+from .serializers import ProfileSerializer, PostSerializer, FollowerSerializer, LikeSerializer
 from rest_framework.response import Response
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -29,14 +29,17 @@ def home_page(request):
         is_public = Q(Q(visibility="public"), Q(unlisted=False))
         is_friend_post = Q(Q(visibility="friends"), Q(author__in=friends))
         posts = Post.objects.all().filter(own_post | is_public | is_friend_post).order_by("-published")
+        
         form = CreatePostForm(request.POST or None)
         if request.method == "POST":
-            if form.is_valid():
-                post = form.save(commit=False)
-                post.author = request.user.profile
-                post.save()
-                messages.success(request, ("Post created successfully!"))
-                return redirect('home')
+            action = request.POST['post']
+            if action == "create_post":
+                if form.is_valid():
+                    post = form.save(commit=False)
+                    post.author = request.user.profile
+                    post.save()
+                    messages.success(request, ("Post created successfully!"))
+                    return redirect('home')
         return render(request, 'home.html', {"posts":posts, "form":form})
 
     posts = Post.objects.all().order_by("-published")
@@ -154,6 +157,30 @@ def friends_list(request):
     profiles = follow.get_friends()
     
     return render(request, 'friends.html', {'profiles':profiles})
+
+@login_required
+def view_post(request, post_id):
+    postGet = Post.objects.get(id=post_id)
+    likedUser = request.user.profile
+    likePosts = Like.objects.filter(post=postGet)
+    counts = len(likePosts)
+
+    liked = True
+    data = Like.objects.filter(post=postGet, author=likedUser)
+    if len(data) > 0:
+        liked = True
+    else:
+        liked = False
+
+    if request.method == "POST":
+        action = request.POST['like']
+        if action == "like":
+            like = Like(summary="",author=likedUser, post=postGet, object="")
+            like.save()
+        elif action == "unlike":
+            like = Like.objects.filter(post=postGet, author=likedUser).delete()
+        return redirect("home")
+    return render(request, "view_post.html", {"post":postGet, "likes":counts, "liked":liked})
     
 class PostDetail(APIView):
     def get(self, request, *args, **kwargs):
@@ -269,5 +296,6 @@ class Likes(APIView):
         """
         author_id = kwargs['author_id']
         author_likes = Likes.objects.filter(profile_id=author_id)
-        serializer = LikesSerializer(author_likes, many=True)
+        serializer = LikeSerializer(author_likes, many=True)
         return Response(serializer.data, status=201)
+    
