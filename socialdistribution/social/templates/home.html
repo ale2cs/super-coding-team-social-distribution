@@ -17,11 +17,22 @@
     {% for post in posts %}
 
         <div class="alert alert-light" role="alert">
+            <div class="position-absolute top-0 end-0">
+                <form>
+                    {% csrf_token %}
+                    <a href="{% url 'view_post' post.id %}" class="btn btn-success btn-outline-primary">View</a>
+                </form>
+            </div>
             <small class="text-muted">
                 {{ post.author }} ({{ post.published }})<br/>
             </small>
             <strong>{{ post.title }}</strong><br/>
             {{ post.description }}
+            <br/>
+            {% if post.author.id == request.user.profile.id %}
+            <a href="{% url 'edit_post' post.id %}" class="btn btn-primary text-decoration-none">Edit</a>
+            <a href="{% url 'delete_post' post.id %}" class="btn btn-danger text-decoration-none">Delete</a>
+            {% endif %}
         </div><br/>
 
     {% endfor %}
@@ -36,7 +47,7 @@
 
             {{ form.as_p }}
 
-            <button type="submit" class="btn btn-secondary">Post</button>
+            <button type="submit" name="post" value="create_post" class="btn btn-secondary">Post</button>
           </form>
         {% endif %}
     </div>

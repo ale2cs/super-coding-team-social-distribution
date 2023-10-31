@@ -10,8 +10,11 @@ urlpatterns = [
     path('friends/', views.friends_list, name='friends'),
     path('social/', views.profile_list, name='social'),
     path('social/<int:pk>', views.profile_detail, name='profile_detail'),
+    path('view_post/<str:post_id>', views.view_post, name='view_post'),
+    path('edit_post/<str:post_id>', views.edit_post, name='edit_post'),
+    path('delete_post/<str:post_id>', views.delete_post, name='delete_post'),
     path('service/authors/<str:author_id>/posts/<str:post_id>', views.PostDetail.as_view(), name='post-detail'),
     path('service/authors/<str:author_id>/posts', views.PostList.as_view(), name='post-list'),
     path('service/authors/<str:author_id>/followers', views.Followers.as_view(), name='followers'),
-    path('service/authors/<str:author_id>/followers/<str:foreign_author_id>', views.FollowersAction.as_view(), name='followers-action')
+    path('service/authors/<str:author_id>/followers/<str:foreign_author_id>', views.FollowersAction.as_view(), name='followers-action'),
 ]
