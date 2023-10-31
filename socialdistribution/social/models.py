@@ -8,7 +8,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     avatar = models.ImageField(default='default.jpg', upload_to='profile_images')
-    bio = models.TextField()
+    bio = models.TextField(blank=True)
 
     def __str__(self):
         return self.user.username
@@ -32,15 +32,27 @@ class Post(models.Model):
     unlisted = models.BooleanField(default=False)
     
 class Follower(models.Model):
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='profile')
+    profile = models.OneToOneField(Profile, on_delete=models.CASCADE, related_name='profile')
     following = models.ManyToManyField(Profile, related_name='followed_by', symmetrical=False, blank=True)
 
+    def get_followers(self):
+        """
+        Returns list of followers
+        """
+        try:
+            follow = self.profile.followed_by.all() 
+        except AttributeError:
+            return []
+        return [follower.profile for follower in follow]
+
     def get_friends(self):
+        """
+        Returns list of friends (bidirectional follow)
+
+        """
         following = set(self.following.all())
-        follow = self.profile.followed_by.all()  # Follower objects
-        followers = (follower.profile for follower in follow)
-        friends = list(following.intersection(followers))
-        return friends
+        followers = set(self.get_followers())
+        return list(following.intersection(followers))
 
 class FriendFollowRequest(models.Model):
     summary = models.CharField(max_length=200)
