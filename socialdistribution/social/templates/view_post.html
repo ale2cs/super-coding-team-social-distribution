@@ -22,24 +22,6 @@
         {{ post.description }}
     </div><br/>
 
-    <div class="jumbotron">
-        <h6 class="display-6 pt-2">Comments</h6>
-        <hr class="my-4">
-    </div>
-
-    {% for comment in comments %}
-
-        <div class="alert alert-light" role="alert">
-            <small class="text-muted">
-                {{ comment.author }} ({{ comment.published }})<br/>
-            </small>
-            <strong>{{ comment.content }}</strong><br/>
-            <br/>
-        </div><br/>
-
-    {% endfor %}
-
-
     <form method=POST>
         {% csrf_token %}
         {% if liked %}
@@ -47,5 +29,29 @@
         {% else %}
         <button type="submit" name="action" value="like" class="btn btn-success btn-outline-primary">Like</button>
         {% endif %}
+        <br/><br/>
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" name="action" value="comment" class="btn btn-secondary">Comment</button>
     </form>
+    <br/><br/>
+    <div class="jumbotron">
+        <h6 class="display-6 pt-2">Comments</h6>
+        <hr class="my-4">
+    </div>
+
+    {% if comments %}
+        {% for comment in comments %}
+            <div class="alert alert-light" role="alert">
+                <small class="text-muted">
+                    {{ comment.author }} ({{ comment.published }})<br/>
+                </small>
+                <strong>{{ comment.content }}</strong><br/>
+                <br/>
+            </div><br/>
+        {% endfor %}
+    {% else %}
+    <p>No Comments :(</p>
+    {% endif %}
+
 {% endblock content %}

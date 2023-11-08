@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.views import View, generic
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from .forms import RegisterUser, LoginUser, UpdateUserForm, UpdateProfileForm, CreatePostForm
+from .forms import RegisterUser, LoginUser, UpdateUserForm, UpdateProfileForm, CreatePostForm, CreateCommentForm
 from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
 from django.contrib.auth.views import PasswordChangeView
@@ -180,20 +180,26 @@ def friends_list(request):
 
 @login_required
 def view_post(request, post_id):
+    # get likes
     postGet = Post.objects.get(id=post_id)
     likedUser = request.user.profile
     likePosts = Like.objects.filter(post=postGet)
     likes = len(likePosts)
 
+    # get comments
     comments = Comment.objects.filter(post=postGet).order_by("-published")
     commentCount = len(comments)
 
+    # get like/unlike button
     liked = True
     data = Like.objects.filter(post=postGet, author=likedUser)
     if len(data) > 0:
         liked = True
     else:
         liked = False
+
+    # get comment form
+    form = CreateCommentForm(request.POST or None)
 
     if request.method == "POST":
         action = request.POST['action']
@@ -204,8 +210,15 @@ def view_post(request, post_id):
         elif action == "unlike":
             like = Like.objects.filter(post=postGet, author=likedUser).delete()
             messages.success(request, ("Post unliked successfully!"))
+        elif action == "comment":
+            if form.is_valid():
+                comment = form.save(commit=False)
+                comment.author = request.user.profile
+                comment.post = postGet
+                comment.save()
+                messages.success(request, ("Commented on post successfully!"))
         return redirect("home")
-    return render(request, "view_post.html", {"post":postGet, "likes":likes, "liked":liked, "comments":comments, "commentCount":commentCount})
+    return render(request, "view_post.html", {"post":postGet, "likes":likes, "liked":liked, "comments":comments, "commentCount":commentCount, "form": form})
     
 class PostDetail(APIView):
     def get(self, request, *args, **kwargs):
