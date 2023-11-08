@@ -65,6 +65,14 @@ class Like(models.Model):
     post = models.ForeignKey(Post, blank=True, null=True, on_delete=models.CASCADE)
     object = models.CharField(max_length=200)
 
+class Comment(models.Model):
+    content = models.TextField()
+    author = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    published = models.DateTimeField(auto_now_add=True)
+    contentType = models.CharField(max_length=200, default="text/plain")
+
+
 class Liked(models.Model):
     likedPosts = models.ManyToManyField(Like, related_name="liked_posts", symmetrical=False, blank=True)
 
