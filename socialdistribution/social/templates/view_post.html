@@ -11,7 +11,8 @@
     <div class="alert alert-light" role="alert">
         <div class="position-absolute top-0 end-0">
             <small class="text-muted">
-                Likes: {{likes}}
+                Likes: {{likes}} <br/>
+                Comments: {{commentCount}}
             </small>
         </div>
         <small class="text-muted">
@@ -21,12 +22,30 @@
         {{ post.description }}
     </div><br/>
 
+    <div class="jumbotron">
+        <h6 class="display-6 pt-2">Comments</h6>
+        <hr class="my-4">
+    </div>
+
+    {% for comment in comments %}
+
+        <div class="alert alert-light" role="alert">
+            <small class="text-muted">
+                {{ comment.author }} ({{ comment.published }})<br/>
+            </small>
+            <strong>{{ comment.content }}</strong><br/>
+            <br/>
+        </div><br/>
+
+    {% endfor %}
+
+
     <form method=POST>
         {% csrf_token %}
         {% if liked %}
-        <button type="submit" name="like" value="unlike" class="btn btn-danger">Unlike</button>
+        <button type="submit" name="action" value="unlike" class="btn btn-danger">Unlike</button>
         {% else %}
-        <button type="submit" name="like" value="like" class="btn btn-success btn-outline-primary">Like</button>
+        <button type="submit" name="action" value="like" class="btn btn-success btn-outline-primary">Like</button>
         {% endif %}
     </form>
 {% endblock content %}

@@ -2,8 +2,8 @@ import json
 from django.db import IntegrityError, models
 from django.db.models import Q
 from rest_framework.views import APIView
-from .models import Profile, Post, Follower, FriendFollowRequest, Like
-from .serializers import ProfileSerializer, PostSerializer, FollowerSerializer, LikeSerializer
+from .models import Profile, Post, Follower, FriendFollowRequest, Like, Comment
+from .serializers import ProfileSerializer, PostSerializer, FollowerSerializer, LikeSerializer, Comment
 from rest_framework.response import Response
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -20,7 +20,7 @@ from rest_framework.decorators import api_view
 from drf_yasg.utils import swagger_auto_schema
 from django.shortcuts import get_object_or_404
 
-
+@login_required
 def home_page(request):
     if request.user.is_authenticated:
         follow = Follower.objects.get(profile=request.user.profile)
@@ -183,7 +183,10 @@ def view_post(request, post_id):
     postGet = Post.objects.get(id=post_id)
     likedUser = request.user.profile
     likePosts = Like.objects.filter(post=postGet)
-    counts = len(likePosts)
+    likes = len(likePosts)
+
+    comments = Comment.objects.filter(post=postGet).order_by("-published")
+    commentCount = len(comments)
 
     liked = True
     data = Like.objects.filter(post=postGet, author=likedUser)
@@ -193,14 +196,16 @@ def view_post(request, post_id):
         liked = False
 
     if request.method == "POST":
-        action = request.POST['like']
+        action = request.POST['action']
         if action == "like":
             like = Like(summary="",author=likedUser, post=postGet, object="")
             like.save()
+            messages.success(request, ("Post Liked successfully!"))
         elif action == "unlike":
             like = Like.objects.filter(post=postGet, author=likedUser).delete()
+            messages.success(request, ("Post unliked successfully!"))
         return redirect("home")
-    return render(request, "view_post.html", {"post":postGet, "likes":counts, "liked":liked})
+    return render(request, "view_post.html", {"post":postGet, "likes":likes, "liked":liked, "comments":comments, "commentCount":commentCount})
     
 class PostDetail(APIView):
     def get(self, request, *args, **kwargs):
@@ -384,5 +389,5 @@ class Likes(APIView):
         """
         author_id = kwargs['author_id']
         author_likes = Likes.objects.filter(profile_id=author_id)
-        serializer = LikesSerializer(author_likes, many=True)
+        serializer = LikeSerializer(author_likes, many=True)
         return Response(serializer.data, status=200)
