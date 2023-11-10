@@ -1,7 +1,63 @@
 {% extends "base.html" %}
-{% block title %} Login Page {% endblock title%}
+{% block title %} Inbox {% endblock title%}
 {% block content %}
 
-<div class="container text-center">
-    <div class="row">
-        <div class="col-8">
+<br/>
+<div class="jumbotron text-center">
+    <h1 class="display-4 pt-2">Notifications</h1>
+    <hr class="my-4">
+</div>
+<h2>Follows</h2>
+    {% if follows %}
+    {% for follow in follows %}
+        <div class="alert alert-light" role="alert">
+            <strong>
+                <a href="{% url 'profile_detail' follow.user.id %}" class="link-primary">{{ follow.user.username }}</a> has followed you!
+            </strong></br>
+            Do you want to follow them back?
+        </div>
+    {% endfor %}
+    {% else %}
+    <p>No Follows</p>
+    {% endif %}
+<hr class="my-4">
+
+<h2>Likes</h2>
+    {% if likes %}
+        {% for like in likes %}
+            <div class="alert alert-light" role="alert">
+                <strong>
+                    {{ like.summary }}
+                </strong><br/>
+                {{ like.post.title }}
+                <small class="text-muted">
+                    <br/>
+                    {{ like.post.description }}<br/>
+                </small>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No Likes</p>
+    {% endif %}
+<hr class="my-4">
+
+<h2>Comments</h2>
+    {% if comments %}
+        {% for comment in comments %}
+            <div class="alert alert-light" role="alert">
+                <strong>
+                    {{ comment.author }} commented on your post!
+                </strong><br/>
+                {{ comment.content }}
+                <small class="text-muted">
+                    <br/>
+                    {{ comment.post.title }}<br/>
+                </small>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No Comments</p>
+    {% endif %}
+<hr class="my-4">
+
+{% endblock content %}

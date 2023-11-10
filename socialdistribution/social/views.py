@@ -2,7 +2,7 @@ import json
 from django.db import IntegrityError, models
 from django.db.models import Q
 from rest_framework.views import APIView
-from .models import Profile, Post, Follower, FriendFollowRequest, Like, Comment
+from .models import Profile, Post, Follower, FriendFollowRequest, Like, Comment, Inbox
 from .serializers import ProfileSerializer, PostSerializer, FollowerSerializer, LikeSerializer, Comment
 from rest_framework.response import Response
 from django.shortcuts import render, redirect
@@ -158,6 +158,7 @@ def profile_detail(request, pk):
         profile = Profile.objects.get(user_id=pk)
         follow = Follower.objects.get(profile=profile)
         user_profile = request.user.profile
+        inbox = Inbox.objects.get(user=user_profile)
         user_follow = Follower.objects.get(profile=user_profile)           
 
         # Post form logic
@@ -165,8 +166,10 @@ def profile_detail(request, pk):
             action = request.POST['follow']
             if action == "unfollow":
                 user_follow.following.remove(profile)
+                inbox.follows.remove(profile)
             elif action == "follow":
                 user_follow.following.add(profile)
+                inbox.follows.add(profile)
             user_follow.save()
 
         return render(request, 'other_profiles.html', {'profile':profile, 'follow':follow, 'user_follow':user_follow})
@@ -180,11 +183,15 @@ def friends_list(request):
 
 @login_required
 def view_post(request, post_id):
+
     # get likes
     postGet = Post.objects.get(id=post_id)
     likedUser = request.user.profile
     likePosts = Like.objects.filter(post=postGet)
     likes = len(likePosts)
+
+    # access post author's inbox
+    inbox = Inbox.objects.get(user=postGet.author.user.profile)
 
     # get comments
     comments = Comment.objects.filter(post=postGet).order_by("-published")
@@ -204,11 +211,15 @@ def view_post(request, post_id):
     if request.method == "POST":
         action = request.POST['action']
         if action == "like":
-            like = Like(summary="",author=likedUser, post=postGet, object="")
+            likeSummary = likedUser.user.username + " liked your post!"
+            like = Like(summary=likeSummary,author=likedUser, post=postGet, object="")    
             like.save()
+            print(like)
+            inbox.likes.add(like)
             messages.success(request, ("Post Liked successfully!"))
         elif action == "unlike":
             like = Like.objects.filter(post=postGet, author=likedUser).delete()
+            inbox.likes.remove(like)
             messages.success(request, ("Post unliked successfully!"))
         elif action == "comment":
             if form.is_valid():
@@ -216,10 +227,23 @@ def view_post(request, post_id):
                 comment.author = request.user.profile
                 comment.post = postGet
                 comment.save()
+                inbox.comments.add(comment)
                 messages.success(request, ("Commented on post successfully!"))
+        inbox.save()
         return redirect("home")
     return render(request, "view_post.html", {"post":postGet, "likes":likes, "liked":liked, "comments":comments, "commentCount":commentCount, "form": form})
     
+@login_required
+def inbox(request):
+    inbox = Inbox.objects.get(user=request.user.profile)
+    likes = inbox.get_likes()
+    comments = inbox.get_comments()
+    follows = inbox.get_follows()
+
+    #posts = Inbox.objects.all().filter(items__author__in=following)
+    return render(request, 'inbox.html', {'likes':likes, 'comments':comments, 'follows':follows})
+    #return render(request, 'inbox.html', {'likes':likes, 'follows':follows, 'posts':posts})
+
 class PostDetail(APIView):
     def get(self, request, *args, **kwargs):
         """

@@ -72,9 +72,45 @@ class Comment(models.Model):
     published = models.DateTimeField(auto_now_add=True)
     contentType = models.CharField(max_length=200, default="text/plain")
 
-
 class Liked(models.Model):
     likedPosts = models.ManyToManyField(Like, related_name="liked_posts", symmetrical=False, blank=True)
+
+class Inbox(models.Model):
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='inbox_owner')
+    likes = models.ManyToManyField(Like, related_name='rec_likes', symmetrical=False, blank=True)
+    comments = models.ManyToManyField(Comment, related_name='rec_comments', symmetrical=False, blank=True)
+    follows = models.ManyToManyField(Profile, related_name='rec_follows', symmetrical=False, blank=True)
+    posts = models.ManyToManyField(Post, related_name='rec_posts', symmetrical=False, blank=True)
+
+    def get_likes(self):
+        """
+        Returns list of likes the author received
+        """
+        try:
+            likes = self.likes.all()
+        except AttributeError:
+            return []
+        return likes
+    
+    def get_comments(self):
+        """
+        Returns list of comments the author received
+        """
+        try:
+            comments = self.comments.all() 
+        except AttributeError:
+            return []
+        return comments
+    
+    def get_follows(self):
+        """
+        Returns list of follows the author received
+        """
+        try:
+            follows = self.user.rec_follows.all() 
+        except AttributeError:
+            return []
+        return [follow.user for follow in follows]
 
 class Image(models.Model):
     upload = models.ImageField(upload_to='uploads/')
