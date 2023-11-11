@@ -232,17 +232,36 @@ def view_post(request, post_id):
         inbox.save()
         return redirect("home")
     return render(request, "view_post.html", {"post":postGet, "likes":likes, "liked":liked, "comments":comments, "commentCount":commentCount, "form": form})
-    
+
+@login_required
+def inbox_follow(request, pk):
+    if request.user.is_authenticated:
+        profile = Profile.objects.get(user_id=pk)
+        follow = Follower.objects.get(profile=profile)
+        user_profile = request.user.profile
+        inbox = Inbox.objects.get(user=user_profile)
+        user_follow = Follower.objects.get(profile=user_profile)           
+
+        # Post form logic
+        if request.method == "POST":
+            action = request.POST['follow']
+            if action == "unfollow":
+                user_follow.following.remove(profile)
+                inbox.follows.remove(profile)
+            elif action == "follow":
+                user_follow.following.add(profile)
+                inbox.follows.add(profile)
+            user_follow.save()
+            return redirect("inbox")
+        return render(request, 'inbox_follow.html', {'profile':profile, 'follow':follow, 'user_follow':user_follow})
+
 @login_required
 def inbox(request):
     inbox = Inbox.objects.get(user=request.user.profile)
     likes = inbox.get_likes()
     comments = inbox.get_comments()
     follows = inbox.get_follows()
-
-    #posts = Inbox.objects.all().filter(items__author__in=following)
     return render(request, 'inbox.html', {'likes':likes, 'comments':comments, 'follows':follows})
-    #return render(request, 'inbox.html', {'likes':likes, 'follows':follows, 'posts':posts})
 
 class PostDetail(APIView):
     def get(self, request, *args, **kwargs):

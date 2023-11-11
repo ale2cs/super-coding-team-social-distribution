@@ -14,7 +14,12 @@
             <strong>
                 <a href="{% url 'profile_detail' follow.user.id %}" class="link-primary">{{ follow.user.username }}</a> has followed you!
             </strong></br>
-            Do you want to follow them back?
+            {% if user.profile != profile %}
+            <form method="POST">
+                {% csrf_token %}
+                <a href="{% url 'inbox_follow' follow.user.id %}" class="btn btn-primary text-decoration-none">View Friend Status</a>
+            </form>
+            {% endif %}
         </div>
     {% endfor %}
     {% else %}
