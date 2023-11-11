@@ -7,6 +7,24 @@
     <h1 class="display-4 pt-2">Notifications</h1>
     <hr class="my-4">
 </div>
+<h2>Friend Requests</h2>
+    {% if requests %}
+    {% for request in requests %}
+        <div class="alert alert-light" role="alert">
+            <strong>
+                <a href="{% url 'profile_detail' request.follower.user.id %}" class="link-primary">{{ request.follower.user.username }}</a> has sent a friend request!
+            </strong></br>
+            <form method="POST">
+                {% csrf_token %}
+                <a href="{% url 'inbox_request' request.follower.user.id %}" class="btn btn-primary text-decoration-none">View Friend Status</a>
+            </form>
+        </div>
+    {% endfor %}
+    {% else %}
+    <p>No Friend Requests</p>
+    {% endif %}
+<hr class="my-4">
+
 <h2>Follows</h2>
     {% if follows %}
     {% for follow in follows %}
@@ -14,12 +32,6 @@
             <strong>
                 <a href="{% url 'profile_detail' follow.user.id %}" class="link-primary">{{ follow.user.username }}</a> has followed you!
             </strong></br>
-            {% if user.profile != profile %}
-            <form method="POST">
-                {% csrf_token %}
-                <a href="{% url 'inbox_follow' follow.user.id %}" class="btn btn-primary text-decoration-none">View Friend Status</a>
-            </form>
-            {% endif %}
         </div>
     {% endfor %}
     {% else %}

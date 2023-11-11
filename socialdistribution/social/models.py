@@ -81,6 +81,7 @@ class Inbox(models.Model):
     comments = models.ManyToManyField(Comment, related_name='rec_comments', symmetrical=False, blank=True)
     follows = models.ManyToManyField(Profile, related_name='rec_follows', symmetrical=False, blank=True)
     posts = models.ManyToManyField(Post, related_name='rec_posts', symmetrical=False, blank=True)
+    requests = models.ManyToManyField(FriendFollowRequest, related_name='rec_requests', symmetrical=False, blank=True)
 
     def get_likes(self):
         """
@@ -111,6 +112,16 @@ class Inbox(models.Model):
         except AttributeError:
             return []
         return [follow.user for follow in follows]
+    
+    def get_requests(self):
+        """
+        Returns list of friend requests to the author
+        """
+        try:
+            requests = self.requests.all() 
+        except AttributeError:
+            return []
+        return requests
 
 class Image(models.Model):
     upload = models.ImageField(upload_to='uploads/')
