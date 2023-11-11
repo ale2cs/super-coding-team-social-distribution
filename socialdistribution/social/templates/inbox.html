@@ -46,11 +46,10 @@
                 <strong>
                     {{ like.summary }}
                 </strong><br/>
-                {{ like.post.title }}
-                <small class="text-muted">
-                    <br/>
-                    {{ like.post.description }}<br/>
-                </small>
+                <form method="POST">
+                    {% csrf_token %}
+                    <a href="{% url 'view_post' like.post.id %}" class="btn btn-primary text-decoration-none">View Post</a>
+                </form>
             </div>
         {% endfor %}
     {% else %}
@@ -66,10 +65,10 @@
                     {{ comment.author }} commented on your post!
                 </strong><br/>
                 {{ comment.content }}
-                <small class="text-muted">
-                    <br/>
-                    {{ comment.post.title }}<br/>
-                </small>
+                <form method="POST">
+                    {% csrf_token %}
+                    <a href="{% url 'view_post' comment.post.id %}" class="btn btn-primary text-decoration-none">View Post</a>
+                </form>
             </div>
         {% endfor %}
     {% else %}
