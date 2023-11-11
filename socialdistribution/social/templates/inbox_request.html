@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %} Follow Back {% endblock title%}
+{% block content %}
+
+<div class="container text-center">
+    <div class="jumbotron">
+        <h3 class="display-4 pt-2">Friend Status</h1>
+        {% if user.profile != profile %}
+        <form method="POST" action="">
+            {% csrf_token %}
+            {% if profile in user_follow.following.all %}
+            <p class="lead">
+                You are already friends.
+            </p>
+            <input type="submit" name="accept" value="unfollow" class="btn btn-danger">
+            {% else %}
+            <p class="lead">
+                You are not friends. Do you want to follow them back and become friends?
+            </p>
+            <input type="submit" name="accept" value="accept" class="btn btn-success">
+            {% endif %}
+            <a href="{% url 'inbox' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+        {% endif %}
+    </div>
+
+{% endblock content %}

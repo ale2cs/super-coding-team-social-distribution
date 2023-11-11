@@ -2,7 +2,7 @@ import json
 from django.db import IntegrityError, models
 from django.db.models import Q
 from rest_framework.views import APIView
-from .models import Profile, Post, Follower, FriendFollowRequest, Like, Comment
+from .models import Profile, Post, Follower, FriendFollowRequest, Like, Comment, Inbox
 from .serializers import ProfileSerializer, PostSerializer, FollowerSerializer, LikeSerializer, Comment
 from rest_framework.response import Response
 from django.shortcuts import render, redirect
@@ -50,8 +50,6 @@ def post_like(request, pk):
         if request.method == "POST":
             like = Likes.object()
             like.summary = request.user.username + " Likes your post"
-            #like.author, need to figure out how to connect the liked post to the post author
-            #like.object, need to figure out how to connect the liked post link to the like
             messages.success(request, ("You have liked the post!"))
             return redirect('home')
     else:
@@ -158,15 +156,24 @@ def profile_detail(request, pk):
         profile = Profile.objects.get(user_id=pk)
         follow = Follower.objects.get(profile=profile)
         user_profile = request.user.profile
-        user_follow = Follower.objects.get(profile=user_profile)           
+        inbox = Inbox.objects.get(user=user_profile)
+        user_follow = Follower.objects.get(profile=user_profile)   
+        other_inbox = Inbox.objects.get(user=profile)    
 
         # Post form logic
         if request.method == "POST":
             action = request.POST['follow']
             if action == "unfollow":
                 user_follow.following.remove(profile)
+                inbox.follows.remove(profile)
+                friend_request = FriendFollowRequest.objects.filter(follower=user_profile, followee=profile).delete()
             elif action == "follow":
                 user_follow.following.add(profile)
+                inbox.follows.add(profile)
+                req_summary = request.user.username + " has requested to follow you!"
+                friend_request = FriendFollowRequest(summary=req_summary, follower=user_profile, followee=profile)
+                friend_request.save()
+                other_inbox.requests.add(friend_request)
             user_follow.save()
 
         return render(request, 'other_profiles.html', {'profile':profile, 'follow':follow, 'user_follow':user_follow})
@@ -180,11 +187,15 @@ def friends_list(request):
 
 @login_required
 def view_post(request, post_id):
+
     # get likes
     postGet = Post.objects.get(id=post_id)
     likedUser = request.user.profile
     likePosts = Like.objects.filter(post=postGet)
     likes = len(likePosts)
+
+    # access post author's inbox
+    inbox = Inbox.objects.get(user=postGet.author.user.profile)
 
     # get comments
     comments = Comment.objects.filter(post=postGet).order_by("-published")
@@ -204,8 +215,10 @@ def view_post(request, post_id):
     if request.method == "POST":
         action = request.POST['action']
         if action == "like":
-            like = Like(summary="",author=likedUser, post=postGet, object="")
+            likeSummary = likedUser.user.username + " liked your post!"
+            like = Like(summary=likeSummary,author=likedUser, post=postGet, object="")    
             like.save()
+            inbox.likes.add(like)
             messages.success(request, ("Post Liked successfully!"))
         elif action == "unlike":
             like = Like.objects.filter(post=postGet, author=likedUser).delete()
@@ -216,10 +229,45 @@ def view_post(request, post_id):
                 comment.author = request.user.profile
                 comment.post = postGet
                 comment.save()
+                inbox.comments.add(comment)
                 messages.success(request, ("Commented on post successfully!"))
+        inbox.save()
         return redirect("home")
     return render(request, "view_post.html", {"post":postGet, "likes":likes, "liked":liked, "comments":comments, "commentCount":commentCount, "form": form})
-    
+
+@login_required
+def inbox_request(request, pk):
+    if request.user.is_authenticated:
+        profile = Profile.objects.get(user_id=pk)
+        follow = Follower.objects.get(profile=profile)
+        user_profile = request.user.profile
+        inbox = Inbox.objects.get(user=user_profile)
+        user_follow = Follower.objects.get(profile=user_profile)           
+
+        # Post form logic
+        if request.method == "POST":
+            action = request.POST['accept']
+            if action == "unfollow":
+                user_follow.following.remove(profile)
+                inbox.follows.remove(profile)
+            elif action == "accept":
+                user_follow.following.add(profile)
+                inbox.follows.add(profile)
+                FriendFollowRequest.objects.filter(follower=profile, followee=user_profile).delete()
+            user_follow.save()
+            return redirect("inbox")
+        return render(request, 'inbox_request.html', {'profile':profile, 'follow':follow, 'user_follow':user_follow})
+
+@login_required
+def inbox(request):
+    user_profile = request.user.profile
+    inbox = Inbox.objects.get(user=user_profile)
+    likes = inbox.get_likes()
+    comments = inbox.get_comments()
+    follows = inbox.get_follows()
+    requests = inbox.get_requests()
+    return render(request, 'inbox.html', {'likes':likes, 'comments':comments, 'follows':follows, 'requests':requests})
+
 class PostDetail(APIView):
     def get(self, request, *args, **kwargs):
         """
