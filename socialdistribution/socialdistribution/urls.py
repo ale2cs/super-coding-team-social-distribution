@@ -16,11 +16,11 @@ Including another URLconf
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
-from social.views import CustomLoginView
-from social.forms import LoginUser
 from django.conf import settings
 from django.conf.urls.static import static
-from social.views import ChangePasswordView
+from author.forms import LoginUser
+from author.views import CustomLoginView
+from author.views import ChangePasswordView
 
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -38,7 +38,10 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('social.urls')),
+    path('', include('author.urls')),
+    path('', include('post.urls')),
+    path('', include('inbox.urls')),
+    path('', include('api.urls')),
     path('login/', CustomLoginView.as_view(redirect_authenticated_user=True, template_name='login.html', authentication_form=LoginUser), name='login'),
     path('logout/', auth_views.LogoutView.as_view(template_name='logout.html'), name='logout'),
     path('password-change/', ChangePasswordView.as_view(), name='password_change'),

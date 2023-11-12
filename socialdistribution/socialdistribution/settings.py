@@ -34,7 +34,10 @@ SESSION_COOKIE_AGE = 60 * 60 * 24 * 30
 # Application definition
 
 INSTALLED_APPS = [
-    'social.apps.SocialConfig',
+    'author.apps.AuthorConfig',
+    'post.apps.PostConfig',
+    'inbox.apps.InboxConfig',
+    'api.apps.ApiConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -61,7 +64,7 @@ ROOT_URLCONF = 'socialdistribution.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
