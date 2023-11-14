@@ -57,8 +57,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'api.auth.AuthMiddleWare'
 ]
+# TODO 'api.auth.AuthMiddleWare' 
 
 ROOT_URLCONF = 'socialdistribution.urls'
 
