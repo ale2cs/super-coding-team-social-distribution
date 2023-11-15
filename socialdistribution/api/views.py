@@ -4,12 +4,37 @@ from rest_framework.views import APIView
 from author.models import Follower, Profile, FriendFollowRequest
 from post.models import Post, Like, Comment
 from inbox.models import Inbox
-from .serializers import ProfileSerializer, PostSerializer, FollowerSerializer, LikeSerializer, CommentSerializer
+from .serializers import ProfileSerializer, PostSerializer, LikeSerializer, CommentSerializer
 from rest_framework.response import Response
 from django.core.paginator import Paginator
 from drf_yasg.utils import swagger_auto_schema
 
 # Create your views here.
+class Authors(APIView):
+    def get(self, request, *args, **kwargs):
+        """
+        Returns list of profiles on the server 
+        TODO: Add pagination
+        """
+        authors = Profile.objects.all()
+        serializer = ProfileSerializer(authors, many=True, context={'request':request})
+        response_data = {'type': 'authors', 'items': serializer.data}
+        return Response(response_data, status=200)
+
+class Author(APIView):
+    def get(self, request, *args, **kwargs):
+        """
+        Returns AUTHOR_ID's profile
+        """
+        try: 
+            author_id = kwargs['author_id']
+            author = Profile.objects.get(id=author_id)
+            serializer = ProfileSerializer(author, context={'request':request})
+            response_data = serializer.data
+            return Response(response_data, status=200)
+        except Profile.DoesNotExist:
+            return Response({'error': 'Author does not exist'})
+    
 class PostDetail(APIView):
     def get(self, request, *args, **kwargs):
         """
@@ -116,8 +141,9 @@ class Followers(APIView):
             author_id = kwargs['author_id']
             follow = Follower.objects.get(profile__id=author_id)
             followers = follow.get_followers()
-            serializer = ProfileSerializer(followers, many=True)
-            return Response(serializer.data, status=200)
+            serializer = ProfileSerializer(followers, many=True, context={'request':request})
+            response_data = {'type': 'followers', 'items': serializer.data}
+            return Response(response_data, status=200)
         except Follower.DoesNotExist:
             return Response({'error': 'Author does not exist'}, status=404)
 
