@@ -51,7 +51,7 @@ class Inbox(models.Model):
     
     def get_posts(self):
         try:
-            posts = self.posts.all() 
+            posts = self.posts.all().order_by("-published")
         except AttributeError:
             return []
         return posts
