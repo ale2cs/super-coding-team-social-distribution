@@ -2,78 +2,110 @@
 {% block title %} Inbox {% endblock title%}
 {% block content %}
 
-<br/>
-<div class="jumbotron text-center">
-    <h1 class="display-4 pt-2">Notifications</h1>
-    <hr class="my-4">
-</div>
-<h2>Friend Requests</h2>
-    {% if requests %}
-    {% for request in requests %}
-        <div class="alert alert-light" role="alert">
-            <strong>
-                <a href="{% url 'profile_detail' request.follower.user.id %}" class="link-primary">{{ request.follower.user.username }}</a> has sent a friend request!
-            </strong></br>
-            <form method="POST">
-                {% csrf_token %}
-                <a href="{% url 'inbox_request' request.follower.user.id %}" class="btn btn-primary text-decoration-none">View Friend Status</a>
-            </form>
+    <br/>
+
+    <div class="jumbotron text-center">
+        <h1 class="display-4 pt-2">Notifications</h1>
+        <hr class="my-4">
+    </div>
+
+    <div class="container text-center">
+        <div class="row">
+            <div class="col-8">
+        <h2>Shared Posts</h2>
+            
+            {% if posts %}
+                {% for post in posts %}
+
+                <div class="alert alert-light" role="alert">
+                    <div class="position-absolute top-0 end-0">
+                        <form>
+                            {% csrf_token %}
+                            <a href="{% url 'view_post' post.id %}" class="btn btn-success btn-outline-primary">View</a>
+                        </form>
+                    </div>
+                    <small class="text-muted">
+                        {{ post.author }} ({{ post.published }})<br/>
+                    </small>
+                    <strong>{{ post.title }}</strong><br/>
+                    {{ post.description }}
+                </div><br/>
+
+                {% endfor %}
+            {% endif %}
+
         </div>
-    {% endfor %}
-    {% else %}
-    <p>No Friend Requests</p>
-    {% endif %}
-<hr class="my-4">
 
-<h2>Follows</h2>
-    {% if follows %}
-    {% for follow in follows %}
-        <div class="alert alert-light" role="alert">
-            <strong>
-                <a href="{% url 'profile_detail' follow.user.id %}" class="link-primary">{{ follow.user.username }}</a> has followed you!
-            </strong></br>
-        </div>
-    {% endfor %}
-    {% else %}
-    <p>No Follows</p>
-    {% endif %}
-<hr class="my-4">
 
-<h2>Likes</h2>
-    {% if likes %}
-        {% for like in likes %}
-            <div class="alert alert-light" role="alert">
-                <strong>
-                    {{ like.summary }}
-                </strong><br/>
-                <form method="POST">
-                    {% csrf_token %}
-                    <a href="{% url 'view_post' like.post.id %}" class="btn btn-primary text-decoration-none">View Post</a>
-                </form>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p>No Likes</p>
-    {% endif %}
-<hr class="my-4">
+    <div class="col-4">
+        <h2>Friend Requests</h2>
+            {% if requests %}
+            {% for request in requests %}
+                <div class="alert alert-light" role="alert">
+                    <strong>
+                        <a href="{% url 'profile_detail' request.follower.user.id %}" class="link-primary">{{ request.follower.user.username }}</a> has sent a friend request!
+                    </strong></br>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <a href="{% url 'inbox_request' request.follower.user.id %}" class="btn btn-primary text-decoration-none">View Friend Status</a>
+                    </form>
+                </div>
+            {% endfor %}
+            {% else %}
+            <p>No Friend Requests</p>
+            {% endif %}
+        <hr class="my-4">
 
-<h2>Comments</h2>
-    {% if comments %}
-        {% for comment in comments %}
-            <div class="alert alert-light" role="alert">
-                <strong>
-                    {{ comment.author }} commented on your post!
-                </strong><br/>
-                {{ comment.content }}
-                <form method="POST">
-                    {% csrf_token %}
-                    <a href="{% url 'view_post' comment.post.id %}" class="btn btn-primary text-decoration-none">View Post</a>
-                </form>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p>No Comments</p>
-    {% endif %}
-<hr class="my-4">
+        <h2>Follows</h2>
+            {% if follows %}
+            {% for follow in follows %}
+                <div class="alert alert-light" role="alert">
+                    <strong>
+                        <a href="{% url 'profile_detail' follow.user.id %}" class="link-primary">{{ follow.user.username }}</a> has followed you!
+                    </strong></br>
+                </div>
+            {% endfor %}
+            {% else %}
+            <p>No Follows</p>
+            {% endif %}
+        <hr class="my-4">
+
+        <h2>Likes</h2>
+            {% if likes %}
+                {% for like in likes %}
+                    <div class="alert alert-light" role="alert">
+                        <strong>
+                            {{ like.summary }}
+                        </strong><br/>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <a href="{% url 'view_post' like.post.id %}" class="btn btn-primary text-decoration-none">View Post</a>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No Likes</p>
+            {% endif %}
+        <hr class="my-4">
+
+        <h2>Comments</h2>
+            {% if comments %}
+                {% for comment in comments %}
+                    <div class="alert alert-light" role="alert">
+                        <strong>
+                            {{ comment.author }} commented on your post!
+                        </strong><br/>
+                        {{ comment.content }}
+                        <form method="POST">
+                            {% csrf_token %}
+                            <a href="{% url 'view_post' comment.post.id %}" class="btn btn-primary text-decoration-none">View Post</a>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No Comments</p>
+            {% endif %}
+        <hr class="my-4">
+    </div>
 
 {% endblock content %}

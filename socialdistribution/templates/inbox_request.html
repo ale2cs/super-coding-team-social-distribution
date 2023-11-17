@@ -8,17 +8,11 @@
         {% if user.profile != profile %}
         <form method="POST" action="">
             {% csrf_token %}
-            {% if profile in user_follow.following.all %}
-            <p class="lead">
-                You are already friends.
-            </p>
-            <input type="submit" name="accept" value="unfollow" class="btn btn-danger">
-            {% else %}
             <p class="lead">
                 You are not friends. Do you want to follow them back and become friends?
             </p>
             <input type="submit" name="accept" value="accept" class="btn btn-success">
-            {% endif %}
+            <input type="submit" name="accept" value="decline" class="btn btn-danger">
             <a href="{% url 'inbox' %}" class="btn btn-secondary">Cancel</a>
         </form>
         {% endif %}

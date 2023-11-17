@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %} Share Post {% endblock title%}
+{% block content %}
+
+<div class="container text-center">
+    <div class="jumbotron">
+        <h3 class="display-4 pt-2">Share Post</h1>
+        {% if user.profile != profile %}
+        <form method="POST" action="">
+            {% csrf_token %}
+            {% if post not in shared_posts %}
+                <p class="lead">
+                    Are you sure you want to share this post?
+                </p>
+                <input type="submit" name="confirm" value="yes" class="btn btn-success">
+            {% else %}
+                <p class="lead">
+                    You already shared this post.
+                </p>
+            {% endif %}
+            <a href="{% url 'view_post' post.id %}" class="btn btn-secondary">Cancel</a>
+        </form>
+        {% endif %}
+    </div>
+
+{% endblock content %}

@@ -1,6 +1,6 @@
 import json
 from .models import Post, Like, Comment
-from author.models import Follower
+from author.models import Follower, Profile
 from inbox.models import Inbox
 from django.db.models import Q
 from django.shortcuts import render, redirect
@@ -28,6 +28,16 @@ def home_page(request):
                     post.author = request.user.profile
                     post.save()
                     messages.success(request, ("Post created successfully!"))
+                    
+                    if post.visibility == "public":
+                        for follower in follow.get_followers():
+                            inbox = Inbox.objects.get(user=follower)
+                            inbox.posts.add(post)
+                    elif post.visibility == "friends":
+                        for friend in follow.get_friends():
+                            inbox = Inbox.objects.get(user=friend)
+                            inbox.posts.add(post)
+
                     return redirect('home')
         return render(request, 'home.html', {"posts":posts, "form":form})
 
@@ -67,6 +77,10 @@ def delete_post(request, post_id):
 
 @login_required
 def view_post(request, post_id):
+
+    # get friends
+    follow = Follower.objects.get(profile=request.user.profile)
+    friends = follow.get_friends()
 
     # get likes
     postGet = Post.objects.get(id=post_id)
@@ -113,5 +127,19 @@ def view_post(request, post_id):
                 messages.success(request, ("Commented on post successfully!"))
         inbox.save()
         return redirect("home")
-    return render(request, "view_post.html", {"post":postGet, "likes":likes, "liked":liked, "comments":comments, "commentCount":commentCount, "form": form})
+    return render(request, "view_post.html", {"post":postGet, "likes":likes, "liked":liked, "comments":comments, "commentCount":commentCount, "form": form, "friends":friends})
+
+@login_required
+def share_post(request, post_id, friend_id):
+    profile = Profile.objects.get(user_id=friend_id)
+    inbox = Inbox.objects.get(user=profile)
+    post = Post.objects.get(id=post_id)
+
+    if request.method == "POST":
+        action = request.POST['confirm']
+        if action == "yes":
+            inbox.posts.add(post)
+        inbox.save()
+        return redirect("view_post", post_id)
+    return render(request, "share_post.html", {'shared_posts':inbox.get_posts(), 'post':post})
 
