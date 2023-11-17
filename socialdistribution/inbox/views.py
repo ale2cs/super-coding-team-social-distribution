@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from author.models import Follower, Profile, FriendFollowRequest
 from inbox.models import Inbox
+from post.models import Post
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
@@ -17,9 +18,8 @@ def inbox_request(request, pk):
         # Post form logic
         if request.method == "POST":
             action = request.POST['accept']
-            if action == "unfollow":
-                user_follow.following.remove(profile)
-                inbox.follows.remove(profile)
+            if action == "decline":
+                FriendFollowRequest.objects.filter(follower=profile, followee=user_profile).delete()
             elif action == "accept":
                 user_follow.following.add(profile)
                 inbox.follows.add(profile)
@@ -36,4 +36,5 @@ def inbox(request):
     comments = inbox.get_comments()
     follows = inbox.get_follows()
     requests = inbox.get_requests()
-    return render(request, 'inbox.html', {'likes':likes, 'comments':comments, 'follows':follows, 'requests':requests})
+    posts = inbox.get_posts()
+    return render(request, 'inbox.html', {'likes':likes, 'comments':comments, 'follows':follows, 'requests':requests, 'posts':posts})
