@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from author.models import Follower, Profile, FriendFollowRequest
 from inbox.models import Inbox
+from post.models import Post
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
@@ -36,4 +37,5 @@ def inbox(request):
     comments = inbox.get_comments()
     follows = inbox.get_follows()
     requests = inbox.get_requests()
-    return render(request, 'inbox.html', {'likes':likes, 'comments':comments, 'follows':follows, 'requests':requests})
+    posts = inbox.get_posts()
+    return render(request, 'inbox.html', {'likes':likes, 'comments':comments, 'follows':follows, 'requests':requests, 'posts':posts})
