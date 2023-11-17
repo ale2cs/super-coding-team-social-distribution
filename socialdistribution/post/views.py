@@ -28,10 +28,15 @@ def home_page(request):
                     post.author = request.user.profile
                     post.save()
                     messages.success(request, ("Post created successfully!"))
-
-                    for follower in follow.get_followers():
-                        inbox = Inbox.objects.get(user=follower)
-                        inbox.posts.add(post)
+                    
+                    if post.visibility == "public":
+                        for follower in follow.get_followers():
+                            inbox = Inbox.objects.get(user=follower)
+                            inbox.posts.add(post)
+                    elif post.visibility == "friends":
+                        for friend in follow.get_friends():
+                            inbox = Inbox.objects.get(user=friend)
+                            inbox.posts.add(post)
 
                     return redirect('home')
         return render(request, 'home.html', {"posts":posts, "form":form})

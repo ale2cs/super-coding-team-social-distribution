@@ -18,9 +18,8 @@ def inbox_request(request, pk):
         # Post form logic
         if request.method == "POST":
             action = request.POST['accept']
-            if action == "unfollow":
-                user_follow.following.remove(profile)
-                inbox.follows.remove(profile)
+            if action == "decline":
+                FriendFollowRequest.objects.filter(follower=profile, followee=user_profile).delete()
             elif action == "accept":
                 user_follow.following.add(profile)
                 inbox.follows.add(profile)
