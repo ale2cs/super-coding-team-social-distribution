@@ -64,6 +64,9 @@
     <div class="col-2">
 
         <h3>Share To</h3>
+        {% if post.unlisted %}
+        <a href="{% url 'view_post' post.id %}" target="_blank">Copy this link to share to your friends!</a>
+        {% endif %}
         
         {% if friends %}
             {% for friend in friends %}
