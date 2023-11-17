@@ -67,17 +67,17 @@
         
         {% if friends %}
             {% for friend in friends %}
-            
-            <div class="alert alert-light" role="alert">
-                <strong>
-                    <a href="{% url 'profile_detail' friend.user.id %}" class="link-primary">{{ friend.user.username }}</a>
-                </strong></br>
-                <form method="POST">
-                    {% csrf_token %}
-                    <a href="{% url 'share_post' post_id=post.id friend_id=friend.user.id %}" class="btn btn-primary text-decoration-none">Share</a>
-                </form>
-            </div>
-            
+                {% if post.author != friend %}
+                <div class="alert alert-light" role="alert">
+                    <strong>
+                        <a href="{% url 'profile_detail' friend.user.id %}" class="link-primary">{{ friend.user.username }}</a>
+                    </strong></br>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <a href="{% url 'share_post' post_id=post.id friend_id=friend.user.id %}" class="btn btn-primary text-decoration-none">Share</a>
+                    </form>
+                </div>
+                {% endif %}
             {% endfor %}
         {% else %}
         <p>No one to share to</p>
