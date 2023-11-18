@@ -92,8 +92,7 @@ def view_post(request, post_id):
     inbox = Inbox.objects.get(user=postGet.author.user.profile)
 
     # get comments
-    comments = Comment.objects.filter(post=postGet).order_by("-published")
-    commentCount = len(comments)
+    comments, commentCount = postGet.get_comments()
 
     # get like/unlike button
     liked = True
