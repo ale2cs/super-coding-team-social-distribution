@@ -3,23 +3,30 @@ from django.db import models
 from django.utils import timezone
 
 # Create your models here.
+class Comment:
+    pass
+
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
 class Post(models.Model):
     id = models.CharField(default=uuid.uuid4, editable=False, primary_key=True, max_length=200)
     title = models.CharField(max_length=200)
-    source = models.CharField(max_length=200)
-    origin = models.CharField(max_length=200)
     description = models.CharField(max_length=200)
     contentType = models.CharField(max_length=200)
     content = models.CharField(max_length=200)
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE, related_name="posts",default=None)
-    # categories - figure out how to store these
-    # count - number of comments
-    # comments - url to comments
-    # comment - ForeignKey
+    categories = models.ManyToManyField(Category)
     published = models.DateTimeField(default=timezone.now)
     visibility = models.CharField(max_length=10)
     unlisted = models.BooleanField(default=False)
-    
+
+    def get_comments(self):
+        """
+        Returns list of comments on the post ordered by date it was published, 
+        as well as  returns the number of comments on the post
+        """
+        comments = Comment.objects.filter(post=self).order_by("-published")
+        return comments, len(comments)
 class Like(models.Model):
     summary = models.CharField(max_length=200)
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)

@@ -42,7 +42,7 @@ class PostDetail(APIView):
         """
         try:
             post = Post.objects.get(id=kwargs['post_id'])
-            serializer = PostSerializer(post)
+            serializer = PostSerializer(post, context={'request': request})
             return Response(serializer.data, status=201)
         except Post.DoesNotExist:
             return Response(status=404)
@@ -115,7 +115,7 @@ class PostList(APIView):
         posts = Post.objects.filter(models.Q(author__id=kwargs['author_id'])).order_by('-published')
         paginator = Paginator(posts, per_page=size)
         page_object = paginator.get_page(page)
-        serializer = PostSerializer(page_object, many=True)
+        serializer = PostSerializer(page_object, many=True, context={'request': request})
         return Response(serializer.data, status=200)
         
     @swagger_auto_schema( request_body=PostSerializer)
