@@ -210,6 +210,22 @@ class FollowersAction(APIView):
             return Response({'error': 'Author does not exist'}, status=404)
         except Profile.DoesNotExist:
             return Response({'error': 'Foreign Author does not exist'}, status=404)
+
+class Comments(APIView):
+    def get(self, request, *args, **kwargs):
+        """
+        Returns the list of comments of the post whose id is POST_ID (paginated)
+        TODO: pagination
+        """
+        author_id = kwargs['author_id']
+        post_id = kwargs['post_id']
+        post = Post.objects.get(id=post_id)
+        comments = Comment.objects.filter(post_id=post_id)
+        comment_serializer = CommentSerializer(comments, many=True, context={'request': request})
+        post_serializer = PostSerializer(post, context={'request': request})
+        post_link = post_serializer.data['id']
+        return Response({'type': 'comments', 'id': request.build_absolute_uri(), 
+                         'post': post_link, 'comments': comment_serializer.data}, status=200)
     
 class Likes(APIView):
     def get(self, request, *args, **kwargs):

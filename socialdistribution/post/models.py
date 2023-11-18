@@ -34,6 +34,7 @@ class Like(models.Model):
     object = models.CharField(max_length=200)
 
 class Comment(models.Model):
+    id = models.CharField(default=uuid.uuid4, editable=False, primary_key=True, max_length=200)
     content = models.TextField()
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
