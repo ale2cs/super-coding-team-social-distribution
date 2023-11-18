@@ -14,37 +14,22 @@ class ProfileSerializer(serializers.ModelSerializer):
         return 'author'
     
     def get_url(self, instance):
-        request = self.context.get('request')
-        if request:
-            host_url = request.build_absolute_uri('/')[:-1]
-            url = request.path.rstrip('followers/')
-            return f'{host_url}{url}'
-            
         return ''
     
     def get_host(self, instance):
-        request = self.context.get('request')
-        if request:
-            return request.build_absolute_uri('/')
         return ''
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         request = self.context.get('request')
         if request:
-            host_url = request.build_absolute_uri('/')
-            url = f"{host_url}service/authors/{rep['id']}"
+            host = request.build_absolute_uri('/')
+            url = f"{host}service/authors/{rep['id']}"
             rep['id'] = url
             rep['url'] = url
-        else:
-            rep['id'] = ''
-            rep['url'] = ''
 
-        git = rep['github']
-        if git != '':
-            rep['github'] = f"https://github.com/{git}"
-        else:
-            rep['github'] = ''
+        if instance.github != '':
+            rep['github'] = f"https://github.com/{instance.github}"
         return rep
     class Meta:
         model = Profile 
