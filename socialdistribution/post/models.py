@@ -19,6 +19,8 @@ class Post(models.Model):
     published = models.DateTimeField(default=timezone.now)
     visibility = models.CharField(max_length=10)
     unlisted = models.BooleanField(default=False)
+    image_url = models.URLField(max_length=200, blank=True, null=True)
+    image_file = models.FileField(upload_to="uploads", blank=True, null=True)
 
     def get_comments(self):
         """

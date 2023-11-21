@@ -20,6 +20,14 @@ class CreatePostForm(forms.ModelForm):
                                                                 label="",
                                                                 )
 
+    image_url = forms.URLField(required=False,widget=forms.URLInput(attrs={'placeholder': 'Image Link',
+                                                                           'class': 'form-control'}),
+                                                                           label='',
+                                                                           )
+    image_file = forms.FileField(required=False, widget=forms.FileInput(attrs={'class': 'form-control'}),
+                                                                               label=''
+                                                                               )
+
     visibility = forms.ChoiceField(required=True, choices=(('public', 'PUBLIC'), ('friends', 'FRIENDS')))
 
     unlisted = forms.BooleanField(required=False)
@@ -27,8 +35,9 @@ class CreatePostForm(forms.ModelForm):
     
     class Meta:
         model = Post
-        fields = ['title', 'description', 'visibility', 'unlisted']
-    
+        fields = ['title', 'description', 'image_url', 'image_file', 'visibility', 'unlisted']
+
+        
 class CreateCommentForm(forms.ModelForm):
 
     content = forms.CharField(max_length=200, 

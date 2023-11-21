@@ -25,9 +25,18 @@
             </small>
             <strong>{{ post.title }}</strong><br/>
             {{ post.description }}
+            <br/>
+            
+            {% if post.image_file %}
+            <div class="row my-3 p-3">
+                <img class="img-fluid" src="{{ post.image_file.url }} " style="cursor: pointer;" width="200" height="200"/>
+            </div>
+            {% endif %}
+
         </div><br/>
 
         <form method=POST>
+            
             {% csrf_token %}
             {% if liked %}
             <button type="submit" name="action" value="unlike" class="btn btn-danger">Unlike</button>

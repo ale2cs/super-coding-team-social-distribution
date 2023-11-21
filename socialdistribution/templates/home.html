@@ -29,6 +29,12 @@
             <strong>{{ post.title }}</strong><br/>
             {{ post.description }}
             <br/>
+            {% if post.image_file %}
+            <div class="row my-3 p-3">
+                <img class="img-fluid" src="{{ post.image_file.url }} " style="cursor: pointer;" width="200" height="200"/>
+            </div>
+            {% endif %}
+            <br/>
             {% if post.author.id == request.user.profile.id %}
             <a href="{% url 'edit_post' post.id %}" class="btn btn-primary text-decoration-none">Edit</a>
             <a href="{% url 'delete_post' post.id %}" class="btn btn-danger text-decoration-none">Delete</a>
@@ -42,7 +48,7 @@
     <div class="col-4">
         <br/><br/><br/>
         {% if form %}
-        <form method=POST>
+        <form method=POST enctype="multipart/form-data">
             {% csrf_token %}
 
             {{ form.as_p }}

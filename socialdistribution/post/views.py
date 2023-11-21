@@ -19,8 +19,8 @@ def home_page(request):
         is_friend_post = Q(Q(visibility="friends"), Q(author__in=friends))
         posts = Post.objects.all().filter(own_post | is_public | is_friend_post).order_by("-published")
         
-        form = CreatePostForm(request.POST or None)
         if request.method == "POST":
+            form = CreatePostForm(request.POST, request.FILES)
             action = request.POST['post']
             if action == "create_post":
                 if form.is_valid():
@@ -37,12 +37,11 @@ def home_page(request):
                         for friend in follow.get_friends():
                             inbox = Inbox.objects.get(user=friend)
                             inbox.posts.add(post)
-
                     return redirect('home')
+        else:
+            form = CreatePostForm()
         return render(request, 'home.html', {"posts":posts, "form":form})
 
-    posts = Post.objects.all().order_by("-published")
-    return render(request, 'home.html', {"posts":posts})
 
 def post_like(request, pk):
     if request.user.is_authenticated:
@@ -57,14 +56,16 @@ def post_like(request, pk):
         
 def edit_post(request, post_id):
     post = Post.objects.get(id=post_id)
-    form = CreatePostForm(request.POST or None, instance=post)
     if request.method == "POST":
+        form = CreatePostForm(request.POST or None, request.FILES, instance=post)
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user.profile
             post.save()
             messages.success(request, ("Post updated successfully!"))
             return redirect('home')
+    else:
+        form = CreatePostForm(instance=post)
     return render(request, 'update_post.html', {"post": post, "form": form})
     
 def delete_post(request, post_id):
