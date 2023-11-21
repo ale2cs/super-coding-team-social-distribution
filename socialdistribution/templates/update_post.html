@@ -8,7 +8,13 @@
         <hr class="my-4">
     </div>
 
-    <form method=POST>
+    <form method=POST enctype="multipart/form-data">
+        {% if post.image_file %}
+        <div class="row my-3 p-3">
+            <img class="img-fluid" src="{{ post.image_file.url }} " style="cursor: pointer;" width="200" height="200"/>
+        </div>
+        {% endif %}
+        
         {% csrf_token %}
 
         {{ form.as_p }}
