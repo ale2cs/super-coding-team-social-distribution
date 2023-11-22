@@ -1,7 +1,10 @@
 from rest_framework import serializers
+from rest_framework.viewsets import ModelViewSet
 from django.http import HttpRequest
+from rest_framework.response import Response
 from post.models import Post, Like, Comment, Category
-from author.models import Profile, Follower
+from author.models import Profile, Follower, FriendFollowRequest
+from inbox.models import Inbox
 
 class ProfileSerializer(serializers.ModelSerializer):
     type = serializers.SerializerMethodField()
@@ -25,6 +28,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         if request:
             host = request.build_absolute_uri('/')
             url = f"{host}service/authors/{rep['id']}"
+            rep['host'] = host
             rep['id'] = url
             rep['url'] = url
 
@@ -74,9 +78,31 @@ class PostSerializer(serializers.ModelSerializer):
         fields = ['type', 'title', 'id', 'source', 'origin', 'description', 'contentType', 'content', 'author', 'categories', 'count', 'published', 'visibility', 'unlisted']
 
 class LikeSerializer(serializers.ModelSerializer):
+    type = serializers.SerializerMethodField()
+    object = serializers.SerializerMethodField()
+
+    def get_type(self, instance):
+        return 'like'
+
+    def get_object(self, instance):
+        return ''
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        request = self.context.get('request')
+        if request:
+            post = instance.post
+            author = post.author
+            profile_serializer = ProfileSerializer(instance.author, context={'request': request})
+            host = request.build_absolute_uri('/')
+            rep['@context'] = 'https://www.w3.org/ns/activitystreams'
+            rep['author'] = profile_serializer.data
+            rep['object'] = f'{host}service/authors/{author.id}/posts/{post.id}'
+        return rep
+
     class Meta:
         model = Like
-        fields = '__all__'
+        fields = ['type', 'summary', 'author', 'object']
 class CommentSerializer(serializers.ModelSerializer):
     type = serializers.SerializerMethodField()
     comment = serializers.CharField(source='content')
@@ -96,3 +122,36 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ['type', 'id', 'author', 'comment', 'contentType', 'published']
+
+class FollowSerializer(serializers.ModelSerializer):
+    type = serializers.SerializerMethodField()
+    actor = ProfileSerializer(source='follower', read_only=True)
+    object = ProfileSerializer(source='followee', read_only=True)
+
+    def get_type(self, instance):
+        return 'follow'
+    class Meta:
+        model = FriendFollowRequest
+        fields = ['type', 'summary', 'actor', 'object']
+class InboxSerializer(serializers.ModelSerializer):
+    '''
+    Does not work, tried using get_serializer
+    Using ModelSerializer instead of Serializer atm
+    Tried ModelViewSet as well
+    '''
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        type_value = request.data['type']
+        if type_value == 'post':
+            serializer = PostSerializer(instance, context={'request': request})
+        elif type_value == 'follow':
+            serializer = FollowSerializer(instance, context={'request': request})
+        elif type_value == 'like':
+            serializer = LikeSerializer(instance, context={'request': request})
+        elif type_value == 'comment':
+            serializer = CommentSerializer(instance, context={'request': request})
+        return serializer.data
+    
+    class Meta:
+        model = Inbox
+        fields = '__all__'
