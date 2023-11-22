@@ -9,4 +9,8 @@ urlpatterns = [
     path('service/authors/<str:author_id>/posts/<str:post_id>/comments', views.Comments.as_view(), name='comment'),
     path('service/authors/<str:author_id>/followers', views.Followers.as_view(), name='followers'),
     path('service/authors/<str:author_id>/followers/<str:foreign_author_id>', views.FollowersAction.as_view(), name='followers-action'),
+    path('service/authors/<str:author_id>/liked', views.LikedPosts.as_view(), name='liked-list'),
+    path('service/authors/<str:author_id>/posts/<str:post_id>/likes', views.LikesOnPost.as_view(), name='liked-list'),
+    path('service/authors/<str:author_id>/posts/<str:post_id>/comments/<str:comment_id>/likes', views.LikesOnComment.as_view(), name='liked-list'),
+    path('service/authors/<str:author_id>/inbox', views.InboxAdd.as_view(), name='inbox'),
 ]
