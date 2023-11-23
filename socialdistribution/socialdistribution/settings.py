@@ -99,6 +99,7 @@ SWAGGER_SETTINGS = {
             'name': 'Authorization'
         }
     },
+    'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SwaggerAutoSchema',
 }
 
 # Database
