@@ -25,10 +25,18 @@ class Post(models.Model):
     def get_comments(self):
         """
         Returns list of comments on the post ordered by date it was published, 
-        as well as  returns the number of comments on the post
+        as well as returns the number of comments on the post,
         """
         comments = Comment.objects.filter(post=self).order_by("-published")
         return comments, len(comments)
+    
+    def get_likes(self):
+        """
+        Returns the number of likes on the post
+        """
+        likes = Like.objects.filter(post=self)
+        return len(likes)
+
 class Like(models.Model):
     summary = models.CharField(max_length=200)
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
@@ -42,6 +50,31 @@ class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     published = models.DateTimeField(auto_now_add=True)
     contentType = models.CharField(max_length=200, default="text/plain")
+
+    def get_likes(self):
+        """
+        Returns the number of likes on the comment
+        """
+
+        likes = CommentLike.objects.filter(comment=self)
+        return len(likes)
+    
+    def liked(self, liked_user):
+        """
+        Returns true if a comment is liked by liked_user
+        false otherwise
+        """
+
+        data = CommentLike.objects.filter(comment=self, author=liked_user)
+        if len(data) > 0:
+            return True
+        return False
+
+class CommentLike(models.Model):
+    summary = models.CharField(max_length=200)
+    author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
+    comment = models.ForeignKey(Comment, blank=True, null=True, on_delete=models.CASCADE)
+    object = models.CharField(max_length=200)
 
 class Liked(models.Model):
     likedPosts = models.ManyToManyField(Like, related_name="liked_posts", symmetrical=False, blank=True)
