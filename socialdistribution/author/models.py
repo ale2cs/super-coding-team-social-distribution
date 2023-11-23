@@ -9,6 +9,7 @@ class Profile(models.Model):
     github = models.CharField(max_length=200)
     avatar = models.ImageField(default='default.jpg', upload_to='profile_images')
     bio = models.TextField(blank=True)
+    approved = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username
@@ -41,3 +42,5 @@ class FriendFollowRequest(models.Model):
     follower = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='follower')
     followee = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='followee')
 
+class SiteConfiguration(models.Model):
+    user_approval_required = models.BooleanField(default=True)

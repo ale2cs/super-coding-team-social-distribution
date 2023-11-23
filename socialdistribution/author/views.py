@@ -1,4 +1,4 @@
-from .models import Profile, Follower, FriendFollowRequest
+from .models import Profile, Follower, FriendFollowRequest, SiteConfiguration
 from inbox.models import Inbox
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -15,6 +15,15 @@ class CustomLoginView(LoginView):
     form_class = LoginUser
 
     def form_valid(self, form):
+        config = SiteConfiguration.objects.all()[:1].get()
+        user_approval_required = config.user_approval_required
+        if user_approval_required:
+            if not self.request.user.is_authenticated:
+                user_profile = Profile.objects.get(user=form.user_cache)
+                if not user_profile.approved:
+                    messages.success(self.request, 'Admin approval required')
+                    return redirect(to='/')
+            
         remember_me = form.cleaned_data.get('remember_me')
 
         if not remember_me:
