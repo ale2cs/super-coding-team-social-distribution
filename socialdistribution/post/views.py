@@ -100,8 +100,27 @@ def view_post(request, post_id):
     for comment in comments:
         commentLikes = comment.get_likes()
         isLiked = comment.liked(likedUser)
-        commentsInfo.append([comment, commentLikes, isLiked, index])
-        index += 1
+
+        # check if the profile is friend with the person who commented on the post
+        post = comment.post
+        # print(post.visibility)
+        if post.visibility == "friends":
+            commentAuthor = comment.author
+            postAuthor = postGet.author
+            # this author is the author of the comment
+            isCommentAuthor = request.user.profile == commentAuthor
+            # this author is the author of the post
+            isPostAuthor = request.user.profile == postAuthor
+            # the comment is created by the post author
+            isAuthor = commentAuthor == postAuthor
+
+            if (isCommentAuthor or isPostAuthor or isAuthor):
+                commentsInfo.append([comment, commentLikes, isLiked, index])    
+                index += 1   
+
+        else:
+            commentsInfo.append([comment, commentLikes, isLiked, index])
+            index += 1
 
     # get like/unlike button for post
     liked = True
