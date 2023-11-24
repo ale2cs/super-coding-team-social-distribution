@@ -74,8 +74,5 @@ class CommentLike(models.Model):
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
     comment = models.ForeignKey(Comment, blank=True, null=True, on_delete=models.CASCADE)
 
-class Liked(models.Model):
-    likedPosts = models.ManyToManyField(Like, related_name="liked_posts", symmetrical=False, blank=True)
-
 class Image(models.Model):
     upload = models.ImageField(upload_to='uploads/')
