@@ -106,6 +106,26 @@
                 <p>No Comments</p>
             {% endif %}
         <hr class="my-4">
+
+        <h2>Comment Likes</h2>
+        {% if comment_likes %}
+            {% for comment_like in comment_likes %}
+                <div class="alert alert-light" role="alert">
+                    <strong>
+                        {{ comment_like.summary }}
+                    </strong><br/>
+                    {{ comment_like.comment.content }}
+                    <form method="POST">
+                        {% csrf_token %}
+                        <a href="{% url 'view_post' comment_like.comment.post.id %}" class="btn btn-primary text-decoration-none">View Post</a>
+                    </form>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No Comment Likes</p>
+        {% endif %}
+    <hr class="my-4">
+
     </div>
 
 {% endblock content %}
