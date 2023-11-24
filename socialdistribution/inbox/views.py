@@ -37,4 +37,5 @@ def inbox(request):
     follows = inbox.get_follows()
     requests = inbox.get_requests()
     posts = inbox.get_posts()
-    return render(request, 'inbox.html', {'likes':likes, 'comments':comments, 'follows':follows, 'requests':requests, 'posts':posts})
+    comment_likes = inbox.get_comment_likes()
+    return render(request, 'inbox.html', {'likes':likes, 'comments':comments, 'follows':follows, 'requests':requests, 'posts':posts, 'comment_likes':comment_likes})

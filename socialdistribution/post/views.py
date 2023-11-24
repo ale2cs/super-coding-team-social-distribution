@@ -100,8 +100,27 @@ def view_post(request, post_id):
     for comment in comments:
         commentLikes = comment.get_likes()
         isLiked = comment.liked(likedUser)
-        commentsInfo.append([comment, commentLikes, isLiked, index])
-        index += 1
+
+        # check if the profile is friend with the person who commented on the post
+        post = comment.post
+        # print(post.visibility)
+        if post.visibility == "friends":
+            commentAuthor = comment.author
+            postAuthor = postGet.author
+            # this author is the author of the comment
+            isCommentAuthor = request.user.profile == commentAuthor
+            # this author is the author of the post
+            isPostAuthor = request.user.profile == postAuthor
+            # the comment is created by the post author
+            isAuthor = commentAuthor == postAuthor
+
+            if (isCommentAuthor or isPostAuthor or isAuthor):
+                commentsInfo.append([comment, commentLikes, isLiked, index])    
+                index += 1   
+
+        else:
+            commentsInfo.append([comment, commentLikes, isLiked, index])
+            index += 1
 
     # get like/unlike button for post
     liked = True
@@ -142,12 +161,14 @@ def view_post(request, post_id):
                 likeSummary = likedUser.user.username + " liked your comment!"
                 like = CommentLike(summary=likeSummary, author=likedUser,comment=commentsInfo[commentIndex][0])
                 like.save()
+                if commentsInfo[commentIndex][0].author.user.profile != likedUser:
+                    other_inbox = Inbox.objects.get(user=commentsInfo[commentIndex][0].author.user.profile)
+                    other_inbox.comment_likes.add(like)
+                    other_inbox.save()
                 messages.success(request, ("Comment Liked successfully!"))
-                # inbox?
             elif commentLiking == "unlike":
                 like = CommentLike.objects.filter(author=likedUser,comment=commentsInfo[commentIndex][0]).delete()
                 messages.success(request, ("Comment Unliked successfully!"))
-                # inbox?
 
         inbox.save()
         return redirect("home")

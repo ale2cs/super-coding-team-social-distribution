@@ -1,3 +1,4 @@
+import base64
 from drf_yasg import openapi
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -23,3 +24,7 @@ def validate_paginator_parameters(size, page):
         return {'error': f"Invalid Query Parameter: Page '{page}'"}, 400
 
     return None, None
+  
+def create_basic_auth_header(username, password):
+    credentials = base64.b64encode(f"{username}:{password}".encode('utf-8')).decode('utf-8')
+    return {'Authorization': f'Basic {credentials}'}
