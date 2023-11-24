@@ -119,7 +119,7 @@ def view_post(request, post_id):
         # print(action)
         if action == "like":
             likeSummary = likedUser.user.username + " liked your post!"
-            like = Like(summary=likeSummary,author=likedUser, post=postGet, object="")    
+            like = Like(summary=likeSummary,author=likedUser, post=postGet) 
             like.save()
             inbox.likes.add(like)
             messages.success(request, ("Post Liked successfully!"))

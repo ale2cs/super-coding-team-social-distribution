@@ -1,16 +1,20 @@
 import json
-from django.db import IntegrityError, models
+from django.db import IntegrityError
+from django.db.models import Q
 from rest_framework.views import APIView
 from author.models import Follower, Profile, FriendFollowRequest
 from post.models import Post, Like, Comment
 from inbox.models import Inbox
-from .serializers import ProfileSerializer, PostSerializer, LikeSerializer, CommentSerializer
+from .serializers import ProfileSerializer, PostSerializer, LikeSerializer, CommentSerializer, FollowSerializer, InboxSerializer
 from rest_framework.response import Response
 from django.core.paginator import Paginator
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from .utils import get_field_type
 
 # Create your views here.
 class Authors(APIView):
+    @swagger_auto_schema(responses={200: ProfileSerializer(many=True)})
     def get(self, request, *args, **kwargs):
         """
         Returns list of profiles on the server 
@@ -22,6 +26,7 @@ class Authors(APIView):
         return Response(response_data, status=200)
 
 class Author(APIView):
+    @swagger_auto_schema(responses={200: ProfileSerializer})
     def get(self, request, *args, **kwargs):
         """
         Returns AUTHOR_ID's profile
@@ -36,6 +41,7 @@ class Author(APIView):
             return Response({'error': 'Author does not exist'})
     
 class PostDetail(APIView):
+    @swagger_auto_schema(responses={201: PostSerializer})
     def get(self, request, *args, **kwargs):
         """
         Get the public post whose id is POST_ID
@@ -47,7 +53,7 @@ class PostDetail(APIView):
         except Post.DoesNotExist:
             return Response(status=404)
         
-    @swagger_auto_schema( request_body=PostSerializer)
+    @swagger_auto_schema(request_body=PostSerializer)
     def post(self, request, *args, **kwargs):
         """
         Update the post whose id is POST_ID (must be authenticated)
@@ -96,6 +102,7 @@ class PostDetail(APIView):
             return Response({"error": f"Post with id '{new_instance.id}' already exists"}, status=400)
     
 class PostList(APIView):
+    @swagger_auto_schema(responses={200: PostSerializer(many=True)})
     def get(self, request, *args, **kwargs):
         """
         Get the recent posts from author AUTHOR_ID (paginated)
@@ -112,7 +119,7 @@ class PostList(APIView):
 
         if not size:
             size = 25
-        posts = Post.objects.filter(models.Q(author__id=kwargs['author_id'])).order_by('-published')
+        posts = Post.objects.filter(Q(author__id=kwargs['author_id'])).order_by('-published')
         paginator = Paginator(posts, per_page=size)
         page_object = paginator.get_page(page)
         serializer = PostSerializer(page_object, many=True, context={'request': request})
@@ -133,6 +140,7 @@ class PostList(APIView):
         return Response(serializer.errors, status=400)
 
 class Followers(APIView):
+    @swagger_auto_schema(responses={200: ProfileSerializer(many=True)})
     def get(self, request, *args, **kwargs):
         """
         Returns list of authors who are AUTHOR_ID's followers
@@ -149,6 +157,10 @@ class Followers(APIView):
 
 
 class FollowersAction(APIView):
+    @swagger_auto_schema(responses={200: openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={'is_follower': openapi.Schema(type=openapi.TYPE_BOOLEAN)}
+    )})
     def get(self, request, *args, **kwargs):
         """
         Returns if FOREIGN_AUTHOR_ID is a follower of AUTHOR_ID
@@ -167,6 +179,10 @@ class FollowersAction(APIView):
         except Profile.DoesNotExist:
             return Response({'error': 'Foreign Author does not exist'}, status=404)
 
+    @swagger_auto_schema(responses={200: openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={'message': openapi.Schema(type=openapi.TYPE_STRING)}
+    )})
     def put(self, request, *args, **kwargs):
         """
         Add FOREIGN_AUTHOR_ID as a follower of AUTHOR_ID
@@ -212,6 +228,7 @@ class FollowersAction(APIView):
             return Response({'error': 'Foreign Author does not exist'}, status=404)
 
 class Comments(APIView):
+    @swagger_auto_schema(responses={200: CommentSerializer(many=True)})
     def get(self, request, *args, **kwargs):
         """
         Returns the list of comments of the post whose id is POST_ID (paginated)
@@ -226,13 +243,113 @@ class Comments(APIView):
         post_link = post_serializer.data['id']
         return Response({'type': 'comments', 'id': request.build_absolute_uri(), 
                          'post': post_link, 'comments': comment_serializer.data}, status=200)
-    
-class Likes(APIView):
+
+class LikesOnPost(APIView):
+    @swagger_auto_schema(responses={200: CommentSerializer(many=True)})
     def get(self, request, *args, **kwargs):
         """
-        Returns notifications of likes for AUTHOR_ID
+        Returns list of likes from other authors on AUTHOR_ID's post POST_ID
         """
         author_id = kwargs['author_id']
-        author_likes = Likes.objects.filter(profile_id=author_id)
-        serializer = LikeSerializer(author_likes, many=True)
+        post_id = kwargs['post_id']
+        post = Post.objects.get(author_id=author_id, id=post_id)
+        likes = Like.objects.filter(post=post)
+        serializer = LikeSerializer(likes, many=True, context={'request': request})
+        return Response(serializer.data, status=200)
+
+class LikesOnComment(APIView):
+    def get(self, request, *args, **kwargs):
+        """
+        Returns list of likes from other authors on AUTHOR_ID's post POST_ID
+        comment COMMENT_ID
+        """
+        pass
+
+class LikedPosts(APIView):
+    @swagger_auto_schema(responses={200: LikeSerializer(many=True)})
+    def get(self, request, *args, **kwargs):
+        """
+        Returns list of what public things AUTHOR_ID liked
+        """
+        author_id = kwargs['author_id']
+        public_post_query = Q(post__visibility='public') & Q(post__unlisted=False)
+        author_likes = Like.objects.filter(Q(author_id=author_id) & public_post_query)
+        serializer = LikeSerializer(author_likes, many=True, context={'request': request})
+        return Response({'type': 'liked', 'items':serializer.data}, status=200)
+
+class InboxAdd(APIView):
+    @swagger_auto_schema(request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'type': openapi.Schema(type=openapi.TYPE_STRING),
+            'author': openapi.Schema(type=openapi.TYPE_STRING),
+            'items': openapi.Schema(
+                description='Items can be of type: Post, Follow, Like, Comment. See models section.\nCurrent Example is of Post.',
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        field_name: openapi.Schema(type=get_field_type(field)) for field_name, field in PostSerializer().fields.items()
+                    },
+                )
+            )
+        }
+    ))
+    def post(self, request, *args, **kwargs):
+        """
+        Adds a post, follow, like, or comment object to AUTHOR_ID's inbox
+        """
+        author_id = kwargs['author_id']
+        try:
+            inbox = Inbox.objects.get(user_id=author_id)
+        except Inbox.DoesNotExist:
+            return Response({'message': 'AUTHOR_ID does not exist'},status=404)
+        new_object = False
+        request_data = json.loads(request.body.decode("utf-8"))
+        type_value = request_data['type']
+        if type_value == 'post':
+            post_id = request_data['id'].split('/')[-1]
+            try:
+                post = Post.objects.get(id=post_id)
+                serializer = PostSerializer(post, context={'request': request})
+            except Post.DoesNotExist:
+                request_data['id'] = post_id
+                serializer = PostSerializer(data=request_data, context={'request': request})
+                post = Post.objects.get(id=post_id)
+                new_object = True 
+            if post not in inbox.posts.all():
+                inbox.posts.add(post)
+        elif type_value == 'follow':
+            # TODO not working
+            actor_id = request_data['actor']
+            object_id = request_data['object']
+            try:
+                friend_request = FriendFollowRequest.objects.get(follower_id=actor_id, followee_id=object_id)
+                serializer = FollowSerializer(friend_request, context={'request': request})
+            except FriendFollowRequest.DoesNotExist:
+                serializer = FollowSerializer(data=request_data, context={'request': request})
+                friend_request = FriendFollowRequest.objects.get(follower_id=actor_id, followee_id=object_id)
+                new_object = True
+            if friend_request not in inbox.requests.all():
+                inbox.requests.add(friend_request)
+        elif type_value == 'commment':
+            comment_id = request_data['id'].split('/')[-1]
+            try:
+                comment = Comment.objects.get(id=comment_id)
+                serializer = CommentSerializer(comment, context={'request': request})
+            except Comment.DoesNotExist:
+                request_data['id'] = comment_id
+                serializer = CommentSerializer(data=request_data, context={'request': request})
+                post = Comment.objects.get(id=comment_id)
+                new_object = True 
+            if comment not in inbox.posts.all():
+                inbox.comments.add(comment)
+        elif type_value == 'like':
+            # TODO implement like
+            pass
+        if new_object:
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=200)
+            return Response(serializer.errors, status=400)
         return Response(serializer.data, status=200)

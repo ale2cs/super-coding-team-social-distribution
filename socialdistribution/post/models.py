@@ -9,7 +9,7 @@ class Comment:
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
 class Post(models.Model):
-    id = models.CharField(default=uuid.uuid4, editable=False, primary_key=True, max_length=200)
+    id = models.CharField(default=uuid.uuid4, primary_key=True, max_length=200)
     title = models.CharField(max_length=200)
     description = models.CharField(max_length=200)
     contentType = models.CharField(max_length=200)
@@ -41,7 +41,6 @@ class Like(models.Model):
     summary = models.CharField(max_length=200)
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
     post = models.ForeignKey(Post, blank=True, null=True, on_delete=models.CASCADE)
-    object = models.CharField(max_length=200)
 
 class Comment(models.Model):
     id = models.CharField(default=uuid.uuid4, editable=False, primary_key=True, max_length=200)

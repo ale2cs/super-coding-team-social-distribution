@@ -1,7 +1,7 @@
 from django import forms 
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-from .models import Profile
+from .models import Profile, SiteConfiguration
 
 # contains different forms that the user interacts with
 # e.g the registration form/screen, update user, etc.
@@ -89,3 +89,9 @@ class UpdateProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = ['avatar', 'bio']
+
+class SiteConfigurationForm(forms.ModelForm):
+    class Meta: 
+        model = SiteConfiguration
+        fields = ['user_approval_required']
+        widgets = {'user_approval_required':forms.CheckboxInput(attrs={'class':'switch'})}
