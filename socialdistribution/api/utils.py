@@ -1,3 +1,4 @@
+import base64
 from drf_yasg import openapi
 from rest_framework import serializers
 
@@ -11,3 +12,7 @@ def get_field_type(field):
     elif isinstance(field, serializers.BooleanField):
         return openapi.TYPE_BOOLEAN
     return openapi.TYPE_STRING
+
+def create_basic_auth_header(username, password):
+    credentials = base64.b64encode(f"{username}:{password}".encode('utf-8')).decode('utf-8')
+    return {'Authorization': f'Basic {credentials}'}

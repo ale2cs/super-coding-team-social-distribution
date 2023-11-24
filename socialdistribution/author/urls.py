@@ -9,4 +9,6 @@ urlpatterns = [
     path('friends/', views.friends_list, name='friends'),
     path('social/', views.profile_list, name='social'),
     path('social/<int:pk>', views.profile_detail, name='profile_detail'),
+    path('social/follow/<str:node>/<path:remote_author>', views.send_remote_follow, name='send_remote_follow'),
+    path('social/unfollow/<str:node>/<path:remote_author>', views.send_remote_unfollow, name='send_remote_unfollow')
 ]
