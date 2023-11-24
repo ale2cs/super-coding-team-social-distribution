@@ -24,6 +24,37 @@
     {% endfor %}
     </div>
 {% else %}
-    <p>No authors are available.</p>
+    <p>No authors are available locally.</p>
 {% endif %}
+{% for node, authors in nodes.items %}
+    <br/>
+    <div class="jumbotron text-center">
+        <h1 class="display-4 pt-2">Remote Authors on {{node.name}}</h1>
+        <p class="lead">
+            {{node.url}}
+        </p>
+        <hr class="my-4">
+    </div>
+    {% if authors %}
+        <br/>
+        <div class="card-group">
+        {% for author in authors %}
+            <div class="card p-3 m-3" style="min-width: 18rem; max-width: 18rem;">
+                <img class="card-img-top" src="{{author.profileImage}}">
+                <div class="card-body">
+                <h5 class="card-title">{{author.displayName}}</h5>
+                    {% if author.is_follower %}
+                    <a href="{% url 'send_remote_unfollow' remote_author=author.id node=node.name %}" class="btn btn-danger">Unfollow</a>
+                    {% else %}
+                    <a href="{% url 'send_remote_follow' remote_author=author.id node=node.name %}" class="btn btn-success">Follow</a>
+                    {% endif %}
+                </form>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <p>No authors are available in this node.</p>
+    {% endif %}
+{% endfor %}
 {% endblock content %}

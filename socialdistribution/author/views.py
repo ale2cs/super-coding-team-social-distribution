@@ -1,3 +1,5 @@
+from api.models import Node
+from . import services
 from .models import Profile, Follower, FriendFollowRequest
 from inbox.models import Inbox
 from django.shortcuts import render, redirect
@@ -81,8 +83,22 @@ class ChangePasswordView(SuccessMessageMixin, PasswordChangeView):
 
 @login_required
 def profile_list(request):
-    profiles = Profile.objects.exclude(user=request.user)
-    return render(request, 'social.html', {"profiles":profiles})
+    if request.user.is_authenticated:
+        profiles = Profile.objects.exclude(user=request.user)
+        nodes = Node.objects.all()
+        nodes_map = {}
+        for node in nodes:
+            node_authors_data = services.get_authors_from_node(node)
+            node_authors = node_authors_data['items']
+            for index, remote_author in enumerate(node_authors):
+                following_data = services.get_following_from_node(node, request.user.profile.id, remote_author['id'])
+                remote_author.update(following_data)
+                node_authors[index] = remote_author
+            nodes_map[node] = node_authors
+        user_profile = request.user.profile
+        user_follow = Follower.objects.get(profile=user_profile)   
+                
+    return render(request, 'social.html', {"profiles":profiles, "nodes":nodes_map, "user_follow":user_follow})
 
 @login_required
 def profile_detail(request, pk):
@@ -91,7 +107,7 @@ def profile_detail(request, pk):
         follow = Follower.objects.get(profile=profile)
         user_profile = request.user.profile
         inbox = Inbox.objects.get(user=user_profile)
-        user_follow = Follower.objects.get(profile=user_profile)   
+        user_follow = Follower.objects.get(profile=user_profile)
         other_inbox = Inbox.objects.get(user=profile)    
 
         # Post form logic
@@ -111,10 +127,22 @@ def profile_detail(request, pk):
             user_follow.save()
 
         return render(request, 'other_profiles.html', {'profile':profile, 'follow':follow, 'user_follow':user_follow})
-
+        
 @login_required
 def friends_list(request):
     follow = Follower.objects.get(profile=request.user.profile)
     profiles = follow.get_friends()
     
     return render(request, 'friends.html', {'profiles':profiles})
+
+@login_required
+def send_remote_follow(request, remote_author, node):
+    author_node = Node.objects.get(name=node)
+    services.put_follower_into_node(author_node, request.user.profile.id, remote_author)
+    return redirect('social')
+        
+@login_required
+def send_remote_unfollow(request, remote_author, node):
+    author_node = Node.objects.get(name=node)
+    services.delete_follower_from_node(author_node, request.user.profile.id, remote_author)
+    return redirect('social')

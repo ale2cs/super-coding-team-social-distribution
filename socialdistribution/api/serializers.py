@@ -31,6 +31,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             rep['host'] = host
             rep['id'] = url
             rep['url'] = url
+            rep['profileImage'] = f"{host}media/{rep['profileImage']}"
 
         if instance.github != '':
             rep['github'] = f"https://github.com/{instance.github}"
