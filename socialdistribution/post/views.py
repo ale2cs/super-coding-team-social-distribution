@@ -1,5 +1,5 @@
 import json
-from .models import Post, Like, Comment
+from .models import Post, Like, Comment, CommentLike
 from author.models import Follower, Profile
 from inbox.models import Inbox
 from django.db.models import Q
@@ -86,8 +86,8 @@ def view_post(request, post_id):
     # get likes
     postGet = Post.objects.get(id=post_id)
     likedUser = request.user.profile
-    likePosts = Like.objects.filter(post=postGet)
-    likes = len(likePosts)
+    #likePosts = Like.objects.filter(post=postGet)
+    likes = postGet.get_likes()
 
     # access post author's inbox
     inbox = Inbox.objects.get(user=postGet.author.user.profile)
@@ -95,19 +95,47 @@ def view_post(request, post_id):
     # get comments
     comments, commentCount = postGet.get_comments()
 
-    # get like/unlike button
+    commentsInfo = []
+    index = 0
+    for comment in comments:
+        commentLikes = comment.get_likes()
+        isLiked = comment.liked(likedUser)
+
+        # check if the profile is friend with the person who commented on the post
+        post = comment.post
+        # print(post.visibility)
+        if post.visibility == "friends":
+            commentAuthor = comment.author
+            postAuthor = postGet.author
+            # this author is the author of the comment
+            isCommentAuthor = request.user.profile == commentAuthor
+            # this author is the author of the post
+            isPostAuthor = request.user.profile == postAuthor
+            # the comment is created by the post author
+            isAuthor = commentAuthor == postAuthor
+
+            if (isCommentAuthor or isPostAuthor or isAuthor):
+                commentsInfo.append([comment, commentLikes, isLiked, index])    
+                index += 1   
+
+        else:
+            commentsInfo.append([comment, commentLikes, isLiked, index])
+            index += 1
+
+    # get like/unlike button for post
     liked = True
     data = Like.objects.filter(post=postGet, author=likedUser)
     if len(data) > 0:
         liked = True
     else:
         liked = False
-
+    
     # get comment form
     form = CreateCommentForm(request.POST or None)
 
     if request.method == "POST":
         action = request.POST['action']
+        # print(action)
         if action == "like":
             likeSummary = likedUser.user.username + " liked your post!"
             like = Like(summary=likeSummary,author=likedUser, post=postGet) 
@@ -125,9 +153,26 @@ def view_post(request, post_id):
                 comment.save()
                 inbox.comments.add(comment)
                 messages.success(request, ("Commented on post successfully!"))
+        elif "," in action:
+            commentAction = action.split(",")
+            commentLiking = commentAction[0]
+            commentIndex = int(commentAction[1])
+            if commentLiking == "like":
+                likeSummary = likedUser.user.username + " liked your comment!"
+                like = CommentLike(summary=likeSummary, author=likedUser,comment=commentsInfo[commentIndex][0])
+                like.save()
+                if commentsInfo[commentIndex][0].author.user.profile != likedUser:
+                    other_inbox = Inbox.objects.get(user=commentsInfo[commentIndex][0].author.user.profile)
+                    other_inbox.comment_likes.add(like)
+                    other_inbox.save()
+                messages.success(request, ("Comment Liked successfully!"))
+            elif commentLiking == "unlike":
+                like = CommentLike.objects.filter(author=likedUser,comment=commentsInfo[commentIndex][0]).delete()
+                messages.success(request, ("Comment Unliked successfully!"))
+
         inbox.save()
         return redirect("home")
-    return render(request, "view_post.html", {"post":postGet, "likes":likes, "liked":liked, "comments":comments, "commentCount":commentCount, "form": form, "friends":friends})
+    return render(request, "view_post.html", {"post":postGet, "likes":likes, "liked":liked, "commentsInfo":commentsInfo, "commentCount":commentCount, "form": form, "friends":friends})
 
 @login_required
 def share_post(request, post_id, friend_id):

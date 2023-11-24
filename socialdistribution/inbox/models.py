@@ -8,6 +8,7 @@ class Inbox(models.Model):
     follows = models.ManyToManyField('author.Profile', related_name='rec_follows', symmetrical=False, blank=True)
     posts = models.ManyToManyField('post.Post', related_name='rec_posts', symmetrical=False, blank=True)
     requests = models.ManyToManyField('author.FriendFollowRequest', related_name='rec_requests', symmetrical=False, blank=True)
+    comment_likes = models.ManyToManyField('post.CommentLike', related_name='rec_comment_likes', symmetrical=False, blank=True)
 
     def get_likes(self):
         """
@@ -55,3 +56,13 @@ class Inbox(models.Model):
         except AttributeError:
             return []
         return posts
+    
+    def get_comment_likes(self):
+        """
+        Returns list of comment likes the author received
+        """
+        try:
+            comment_likes = self.comment_likes.all() 
+        except AttributeError:
+            return []
+        return comment_likes

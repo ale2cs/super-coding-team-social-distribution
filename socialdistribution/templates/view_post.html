@@ -58,13 +58,31 @@
             <hr class="my-4">
         </div>
 
-        {% if comments %}
-            {% for comment in comments %}
+        {% if commentsInfo %}
+            {% for info in commentsInfo %}
                 <div class="alert alert-light" role="alert">
+                    <div class="position-absolute top-0 end-0">
+                        <small class="text-muted">
+                            Likes: {{ info.1 }} <br/>
+                        </small>
+                    </div>
                     <small class="text-muted">
-                        {{ comment.author }} ({{ comment.published }})<br/>
+                        {{ info.0.author }} ({{ info.0.published }})<br/>
                     </small>
-                    <strong>{{ comment.content }}</strong><br/>
+                    <strong>{{ info.0.content }}</strong><br/>
+
+
+                    <div class="position-absolute bottom-0 end-50">
+                        <form method=POST>
+                            {% csrf_token %}
+                            {% if info.2 %}
+                            <button type="submit" name="action" value="unlike,{{info.3}}" class="btn btn-danger">Unlike</button>
+                            {% else %}
+                            <button type="submit" name="action" value="like,{{info.3}}" class="btn btn-success btn-outline-primary">Like</button>
+                            {% endif %}
+                        </form>
+                    </div>
+
                     <br/>
                 </div><br/>
             {% endfor %}
