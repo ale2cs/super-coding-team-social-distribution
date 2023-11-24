@@ -1,5 +1,6 @@
 from drf_yasg import openapi
 from rest_framework import serializers
+from rest_framework.response import Response
 
 def get_field_type(field):
     if isinstance(field, serializers.SerializerMethodField):
@@ -11,3 +12,14 @@ def get_field_type(field):
     elif isinstance(field, serializers.BooleanField):
         return openapi.TYPE_BOOLEAN
     return openapi.TYPE_STRING
+
+def validate_paginator_parameters(size, page):
+    if size is not None and not size.isdigit():
+        return {'error': "Invalid Query Parameter: Size = 0"}, 400
+    elif size == '0':
+        return {'error': f"Invalid Query Parameter: Size '{size}'"}, 400
+
+    if page is not None and not page.isdigit():
+        return {'error': f"Invalid Query Parameter: Page '{page}'"}, 400
+
+    return None, None

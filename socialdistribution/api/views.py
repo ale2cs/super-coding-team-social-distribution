@@ -8,9 +8,12 @@ from inbox.models import Inbox
 from .serializers import ProfileSerializer, PostSerializer, LikeSerializer, CommentSerializer, FollowSerializer, InboxSerializer, CommentLikeSerializer
 from rest_framework.response import Response
 from django.core.paginator import Paginator
+from rest_framework.pagination import PageNumberPagination
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from .utils import get_field_type
+from .utils import get_field_type, validate_paginator_parameters
+
+DEFAULT_PAGE_SIZE = 25
 
 # Create your views here.
 class Authors(APIView):
@@ -18,10 +21,21 @@ class Authors(APIView):
     def get(self, request, *args, **kwargs):
         """
         Returns list of profiles on the server 
-        TODO: Add pagination
         """
+        size = request.GET.get('size')
+        page = request.GET.get('page')
+
+        error_response, error_status = validate_paginator_parameters(size, page)
+        if error_response is not None:
+            return Response(error_response, status=error_status)
+
+        if not size:
+            size = DEFAULT_PAGE_SIZE
+
         authors = Profile.objects.all()
-        serializer = ProfileSerializer(authors, many=True, context={'request':request})
+        paginator = Paginator(authors, per_page=size)
+        page_object = paginator.get_page(page)
+        serializer = ProfileSerializer(page_object, many=True, context={'request':request})
         response_data = {'type': 'authors', 'items': serializer.data}
         return Response(response_data, status=200)
 
@@ -109,15 +123,13 @@ class PostList(APIView):
         """
         size = request.GET.get('size')
         page = request.GET.get('page')
-        if size == '0':
-            return Response({'error': "Invalid Query Parameter: Size = 0"}, status=400)
-        elif page is not None and not page.isdigit():
-            return Response({'error': f"Invalid Query Parameter: Page '{page}'"}, status=400)
-        elif size is not None and not size.isdigit():
-            return Response({'error': f"Invalid Query Parameter: Size '{size}'"}, status=400)
+
+        error_response, error_status = validate_paginator_parameters(size, page)
+        if error_response is not None:
+            return Response(error_response, status=error_status)
 
         if not size:
-            size = 25
+            size = DEFAULT_PAGE_SIZE
         posts = Post.objects.filter(Q(author__id=kwargs['author_id'])).order_by('-published')
         paginator = Paginator(posts, per_page=size)
         page_object = paginator.get_page(page)
@@ -231,17 +243,29 @@ class Comments(APIView):
     def get(self, request, *args, **kwargs):
         """
         Returns the list of comments of the post whose id is POST_ID (paginated)
-        TODO: pagination
         """
-        author_id = kwargs['author_id']
+        size = request.GET.get('size')
+        page = request.GET.get('page')
+
+        error_response, error_status = validate_paginator_parameters(size, page)
+        if error_response is not None:
+            return Response(error_response, status=error_status)
+
+        if not size:
+            size = DEFAULT_PAGE_SIZE
+
         post_id = kwargs['post_id']
         post = Post.objects.get(id=post_id)
         comments = Comment.objects.filter(post_id=post_id)
-        comment_serializer = CommentSerializer(comments, many=True, context={'request': request})
+        paginator = Paginator(comments, per_page=size)
+        page_object = paginator.get_page(page)
+        comment_serializer = CommentSerializer(page_object, many=True, context={'request': request})
         post_serializer = PostSerializer(post, context={'request': request})
         post_link = post_serializer.data['id']
-        return Response({'type': 'comments', 'id': request.build_absolute_uri(), 
-                         'post': post_link, 'comments': comment_serializer.data}, status=200)
+        return Response({'type': 'comments', 'page': page, 'size': size, 
+                         'id': request.build_absolute_uri(), 
+                         'post': post_link, 'comments': comment_serializer.data}
+                         , status=200)
 
 class LikesOnPost(APIView):
     @swagger_auto_schema(responses={200: CommentSerializer(many=True)})
