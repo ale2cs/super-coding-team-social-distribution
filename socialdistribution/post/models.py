@@ -73,7 +73,6 @@ class CommentLike(models.Model):
     summary = models.CharField(max_length=200)
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
     comment = models.ForeignKey(Comment, blank=True, null=True, on_delete=models.CASCADE)
-    object = models.CharField(max_length=200)
 
 class Liked(models.Model):
     likedPosts = models.ManyToManyField(Like, related_name="liked_posts", symmetrical=False, blank=True)

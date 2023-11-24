@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.viewsets import ModelViewSet
 from django.http import HttpRequest
 from rest_framework.response import Response
-from post.models import Post, Like, Comment, Category
+from post.models import Post, Like, Comment, CommentLike
 from author.models import Profile, Follower, FriendFollowRequest
 from inbox.models import Inbox
 
@@ -103,6 +103,35 @@ class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
         fields = ['type', 'summary', 'author', 'object']
+
+class CommentLikeSerializer(serializers.ModelSerializer):
+    type = serializers.SerializerMethodField()
+    object = serializers.SerializerMethodField()
+    
+    def get_type(self, instance):
+        return 'like'
+
+    def get_object(self, instance):
+        return ''
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        request = self.context.get('request')
+        if request:
+            comment = instance.comment
+            post = instance. comment.post
+            author = comment.author
+            profile_serializer = ProfileSerializer(instance.author, context={'request': request})
+            host = request.build_absolute_uri('/')
+            rep['@context'] = 'https://www.w3.org/ns/activitystreams'
+            rep['author'] = profile_serializer.data
+            rep['object'] = f'{host}service/authors/{author.id}/posts/{post.id}/comment/{comment.id}'
+        return rep
+
+    class Meta:
+        model = CommentLike
+        fields = ['type', 'summary', 'author', 'object'] 
+
 class CommentSerializer(serializers.ModelSerializer):
     type = serializers.SerializerMethodField()
     comment = serializers.CharField(source='content')

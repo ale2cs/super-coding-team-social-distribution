@@ -3,9 +3,9 @@ from django.db import IntegrityError
 from django.db.models import Q
 from rest_framework.views import APIView
 from author.models import Follower, Profile, FriendFollowRequest
-from post.models import Post, Like, Comment
+from post.models import Post, Like, Comment, CommentLike
 from inbox.models import Inbox
-from .serializers import ProfileSerializer, PostSerializer, LikeSerializer, CommentSerializer, FollowSerializer, InboxSerializer
+from .serializers import ProfileSerializer, PostSerializer, LikeSerializer, CommentSerializer, FollowSerializer, InboxSerializer, CommentLikeSerializer
 from rest_framework.response import Response
 from django.core.paginator import Paginator
 from drf_yasg.utils import swagger_auto_schema
@@ -106,7 +106,6 @@ class PostList(APIView):
     def get(self, request, *args, **kwargs):
         """
         Get the recent posts from author AUTHOR_ID (paginated)
-        TODO: Add pagination
         """
         size = request.GET.get('size')
         page = request.GET.get('page')
@@ -250,10 +249,8 @@ class LikesOnPost(APIView):
         """
         Returns list of likes from other authors on AUTHOR_ID's post POST_ID
         """
-        author_id = kwargs['author_id']
         post_id = kwargs['post_id']
-        post = Post.objects.get(author_id=author_id, id=post_id)
-        likes = Like.objects.filter(post=post)
+        likes = Like.objects.filter(post_id=post_id)
         serializer = LikeSerializer(likes, many=True, context={'request': request})
         return Response(serializer.data, status=200)
 
@@ -263,7 +260,10 @@ class LikesOnComment(APIView):
         Returns list of likes from other authors on AUTHOR_ID's post POST_ID
         comment COMMENT_ID
         """
-        pass
+        comment_id = kwargs['comment_id']
+        likes = CommentLike.objects.filter(comment_id=comment_id)
+        serializer = CommentLikeSerializer(likes, many=True, context={'request': request})
+        return Response(serializer.data, status=200)
 
 class LikedPosts(APIView):
     @swagger_auto_schema(responses={200: LikeSerializer(many=True)})
