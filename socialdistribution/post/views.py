@@ -142,12 +142,14 @@ def view_post(request, post_id):
                 likeSummary = likedUser.user.username + " liked your comment!"
                 like = CommentLike(summary=likeSummary, author=likedUser,comment=commentsInfo[commentIndex][0])
                 like.save()
+                if commentsInfo[commentIndex][0].author.user.profile != likedUser:
+                    other_inbox = Inbox.objects.get(user=commentsInfo[commentIndex][0].author.user.profile)
+                    other_inbox.comment_likes.add(like)
+                    other_inbox.save()
                 messages.success(request, ("Comment Liked successfully!"))
-                # inbox?
             elif commentLiking == "unlike":
                 like = CommentLike.objects.filter(author=likedUser,comment=commentsInfo[commentIndex][0]).delete()
                 messages.success(request, ("Comment Unliked successfully!"))
-                # inbox?
 
         inbox.save()
         return redirect("home")
