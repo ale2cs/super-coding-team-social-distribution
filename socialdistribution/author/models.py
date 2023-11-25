@@ -41,6 +41,14 @@ class FriendFollowRequest(models.Model):
     summary = models.CharField(max_length=200)
     follower = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='follower')
     followee = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='followee')
+    status = models.CharField(max_length=20, default='pending')
+    def accept(self):
+        self.status = 'accepted'
+        self.save()
+
+    def decline(self):
+        self.status = 'declined'
+        self.save()
 
 class SiteConfiguration(models.Model):
     user_approval_required = models.BooleanField(default=True)
