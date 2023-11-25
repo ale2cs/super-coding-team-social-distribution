@@ -5,6 +5,7 @@ coreapi==2.3.3
 coreschema==0.0.4
 dj-database-url==2.1.0
 Django==4.2.6
+django-cors-headers==4.3.1
 django-on-heroku==1.1.2
 django-rest-swagger==2.2.0
 djangorestframework==3.14.0
