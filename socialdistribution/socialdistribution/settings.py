@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'post.apps.PostConfig',
     'inbox.apps.InboxConfig',
     'api.apps.ApiConfig',
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -59,7 +60,14 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'api.auth.AuthMiddleWare', 
+    "corsheaders.middleware.CorsMiddleware",
 ]
+
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:3000', 'http://localhost:3000']
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'socialdistribution.urls'
 
