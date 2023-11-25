@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load social_extra %}
 {% block title %} Confirm Delete {% endblock title%}
 {% block content %}
 
@@ -13,7 +14,11 @@
                 {{ post.author }} ({{ post.published }})<br/>
             </small>
             <strong>{{ post.title }}</strong><br/>
+            {% if post.contentType == "markdown" %}
+            {{ post.description | convert_markdown | safe}}
+            {% else %}
             {{ post.description }}
+            {% endif %}
             <br/>
         </div>
         <form method="POST" action="">

@@ -76,7 +76,13 @@
                     <small class="text-muted">
                         {{ info.0.author }} ({{ info.0.published }})<br/>
                     </small>
-                    <strong>{{ info.0.content }}</strong><br/>
+
+                    {% if info.0.contentType == "markdown" %}
+                    {{ info.0.content | convert_markdown | safe}}
+                    {% else %}
+                    {{ info.0.content }}
+                    {% endif %}
+
 
 
                     <div class="position-absolute bottom-0 end-50">

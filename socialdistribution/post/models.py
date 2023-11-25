@@ -48,7 +48,7 @@ class Comment(models.Model):
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     published = models.DateTimeField(auto_now_add=True)
-    contentType = models.CharField(max_length=200, default="text/plain")
+    contentType = models.CharField(max_length=200)
 
     def get_likes(self):
         """
