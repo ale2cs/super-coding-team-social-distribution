@@ -7,7 +7,7 @@ class AuthMiddleWare:
         self.get_response = get_response
         
     def __call__(self, request):
-        if request.path.startswith('/service/'):
+        if request.path.startswith('/authors/'):
             auth_header = request.META.get('HTTP_AUTHORIZATION', b'')
             if not len(auth_header):
                 return HttpResponse({"Unauthorized."}, status=401)

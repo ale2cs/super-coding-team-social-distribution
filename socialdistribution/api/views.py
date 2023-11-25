@@ -7,6 +7,7 @@ from post.models import Post, Like, Comment, CommentLike
 from inbox.models import Inbox
 from .serializers import ProfileSerializer, PostSerializer, LikeSerializer, CommentSerializer, FollowSerializer, InboxSerializer, CommentLikeSerializer
 from rest_framework.response import Response
+from rest_framework import status
 from django.core.paginator import Paginator
 from rest_framework.pagination import PageNumberPagination
 from drf_yasg.utils import swagger_auto_schema
@@ -17,7 +18,17 @@ DEFAULT_PAGE_SIZE = 25
 
 # Create your views here.
 class Authors(APIView):
-    @swagger_auto_schema(responses={200: ProfileSerializer(many=True)})
+    @swagger_auto_schema(
+        responses={
+            status.HTTP_200_OK: ProfileSerializer,
+            status.HTTP_401_UNAUTHORIZED: openapi.Response(
+                description="Error: Unauthorized",
+                examples={
+                    'text/plain': 'Unauthorized.',
+                },
+            ),
+        },
+    )
     def get(self, request, *args, **kwargs):
         """
         Returns list of profiles on the server 
@@ -40,7 +51,6 @@ class Authors(APIView):
         return Response(response_data, status=200)
 
 class Author(APIView):
-    @swagger_auto_schema(responses={200: ProfileSerializer})
     def get(self, request, *args, **kwargs):
         """
         Returns AUTHOR_ID's profile
@@ -50,9 +60,9 @@ class Author(APIView):
             author = Profile.objects.get(id=author_id)
             serializer = ProfileSerializer(author, context={'request':request})
             response_data = serializer.data
-            return Response(response_data, status=200)
+            return Response(response_data, status=status.HTTP_200_OK)
         except Profile.DoesNotExist:
-            return Response({'error': 'Author does not exist'})
+            return Response({'error': 'Author does not exist'}, status=status.HTTP_404_NOT_FOUND)
     
 class PostDetail(APIView):
     @swagger_auto_schema(responses={201: PostSerializer})
@@ -67,11 +77,11 @@ class PostDetail(APIView):
         except Post.DoesNotExist:
             return Response(status=404)
         
+    '''
     @swagger_auto_schema(request_body=PostSerializer)
     def post(self, request, *args, **kwargs):
         """
         Update the post whose id is POST_ID (must be authenticated)
-        TODO: Do Authentication Check
         """
         try:
             post = Post.objects.get(id=kwargs['post_id'])
@@ -114,6 +124,7 @@ class PostDetail(APIView):
             return Response(serializer.errors, status=400)
         except IntegrityError as e:
             return Response({"error": f"Post with id '{new_instance.id}' already exists"}, status=400)
+    '''
     
 class PostList(APIView):
     @swagger_auto_schema(responses={200: PostSerializer(many=True)})
@@ -136,6 +147,7 @@ class PostList(APIView):
         serializer = PostSerializer(page_object, many=True, context={'request': request})
         return Response(serializer.data, status=200)
         
+    '''
     @swagger_auto_schema( request_body=PostSerializer)
     def post(self, request, *args, **kwargs):
         """
@@ -149,6 +161,7 @@ class PostList(APIView):
             serializer.save()
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+    '''
 
 class Followers(APIView):
     @swagger_auto_schema(responses={200: ProfileSerializer(many=True)})
@@ -167,6 +180,7 @@ class Followers(APIView):
             return Response({'error': 'Author does not exist'}, status=404)
 
 
+'''
 class FollowersAction(APIView):
     @swagger_auto_schema(responses={200: openapi.Schema(
         type=openapi.TYPE_OBJECT,
@@ -197,7 +211,6 @@ class FollowersAction(APIView):
     def put(self, request, *args, **kwargs):
         """
         Add FOREIGN_AUTHOR_ID as a follower of AUTHOR_ID
-        TODO: Must be authenticated
         """
         try:
             author_id = kwargs['author_id']
@@ -237,6 +250,7 @@ class FollowersAction(APIView):
             return Response({'error': 'Author does not exist'}, status=404)
         except Profile.DoesNotExist:
             return Response({'error': 'Foreign Author does not exist'}, status=404)
+'''
 
 class Comments(APIView):
     @swagger_auto_schema(responses={200: CommentSerializer(many=True)})
