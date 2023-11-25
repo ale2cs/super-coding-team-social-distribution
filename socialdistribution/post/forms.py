@@ -51,7 +51,9 @@ class CreateCommentForm(forms.ModelForm):
                                                            }),
                                                            label="",
                                                            )
+    
+    contentType = forms.ChoiceField(required=True, choices=(('plaintext','PLAINTEXT'), ('markdown', 'MARKDOWN')))
 
     class Meta:
         model = Comment
-        fields = ['content']
+        fields = ['content', 'contentType']
