@@ -44,35 +44,40 @@
 
     <div class="col-4">
         <h2>Friend Requests</h2>
-            {% if requests %}
+        {% if requests %}
             {% for request in requests %}
                 <div class="alert alert-light" role="alert">
                     <strong>
                         <a href="{% url 'profile_detail' request.follower.user.id %}" class="link-primary">{{ request.follower.user.username }}</a> has sent a friend request!
-                    </strong></br>
-                    <form method="POST">
+                    </strong><br>
+                    <form method="POST" action="{% url 'respond_to_follow_request' request.id 'accept' %}" style="display: inline;">
                         {% csrf_token %}
-                        <a href="{% url 'inbox_request' request.follower.user.id %}" class="btn btn-primary text-decoration-none">View Friend Status</a>
+                        <button type="submit" class="btn btn-success">Accept</button>
                     </form>
+                    <form method="POST" action="{% url 'respond_to_follow_request' request.id 'decline' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Decline</button>
+                    </form>
+                    <a href="{% url 'inbox_request' request.follower.user.id %}" class="btn btn-primary text-decoration-none">View Friend Status</a>
                 </div>
             {% endfor %}
-            {% else %}
+        {% else %}
             <p>No Friend Requests</p>
-            {% endif %}
+        {% endif %}
         <hr class="my-4">
 
         <h2>Follows</h2>
-            {% if follows %}
+        {% if follows %}
             {% for follow in follows %}
                 <div class="alert alert-light" role="alert">
                     <strong>
                         <a href="{% url 'profile_detail' follow.user.id %}" class="link-primary">{{ follow.user.username }}</a> has followed you!
-                    </strong></br>
+                    </strong><br>
                 </div>
             {% endfor %}
-            {% else %}
+        {% else %}
             <p>No Follows</p>
-            {% endif %}
+        {% endif %}
         <hr class="my-4">
 
         <h2>Likes</h2>
@@ -117,7 +122,7 @@
         <hr class="my-4">
 
         <h2>Comment Likes</h2>
-        {% if comment_likes %}
+        {% comment %} {% if comment_likes %}
             {% for comment_like in comment_likes %}
                 <div class="alert alert-light" role="alert">
                     <strong>
@@ -136,7 +141,7 @@
             {% endfor %}
         {% else %}
             <p>No Comment Likes</p>
-        {% endif %}
+        {% endif %} {% endcomment %}
     <hr class="my-4">
 
     </div>
