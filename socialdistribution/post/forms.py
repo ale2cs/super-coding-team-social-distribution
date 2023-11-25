@@ -30,12 +30,16 @@ class CreatePostForm(forms.ModelForm):
 
     visibility = forms.ChoiceField(required=True, choices=(('public', 'PUBLIC'), ('friends', 'FRIENDS')))
 
+    contentType = forms.ChoiceField(required=True, choices=(('plaintext', 'PLAINTEXT'), ('markdown', 'MARKDOWN')))
+
+
     unlisted = forms.BooleanField(required=False)
+
 
     
     class Meta:
         model = Post
-        fields = ['title', 'description', 'image_url', 'image_file', 'visibility', 'unlisted']
+        fields = ['title', 'description', 'image_url', 'image_file', 'visibility', 'contentType', 'unlisted']
 
         
 class CreateCommentForm(forms.ModelForm):

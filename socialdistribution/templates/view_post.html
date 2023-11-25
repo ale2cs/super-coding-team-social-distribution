@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% load social_extra %}
+
+
 {% block title %} View Post {% endblock title%}
 {% block content %}
     <div class="container text-center">
@@ -24,7 +27,11 @@
                 {{ post.author }} ({{ post.published }})<br/>
             </small>
             <strong>{{ post.title }}</strong><br/>
+            {% if post.contentType == "markdown" %}
+            {{ post.description | convert_markdown | safe}}
+            {% else %}
             {{ post.description }}
+            {% endif %}
             <br/>
 
             {% if post.image_file %}
