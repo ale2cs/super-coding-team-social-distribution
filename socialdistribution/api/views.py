@@ -180,7 +180,6 @@ class Followers(APIView):
             return Response({'error': 'Author does not exist'}, status=404)
 
 
-'''
 class FollowersAction(APIView):
     @swagger_auto_schema(responses={200: openapi.Schema(
         type=openapi.TYPE_OBJECT,
@@ -193,74 +192,69 @@ class FollowersAction(APIView):
         try:
             author_id = kwargs['author_id']
             foreign_author_id = kwargs['foreign_author_id']
-            follow = Follower.objects.get(profile__id=author_id)
-            followers = follow.get_followers()
-            foreign_profile = Profile.objects.get(id=foreign_author_id)
-            is_follower = foreign_profile in followers
+            author_followers = Follower.objects.get(profile__id=author_id)
+            is_follower = author_followers.followingRemote.filter(id=foreign_author_id).exists()
             response_data = {'is_follower': is_follower}
             return Response(response_data, status=200)
         except Follower.DoesNotExist:
             return Response({'error': 'Author does not exist'}, status=404)
-        except Profile.DoesNotExist:
-            return Response({'error': 'Foreign Author does not exist'}, status=404)
 
-    @swagger_auto_schema(responses={200: openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        properties={'message': openapi.Schema(type=openapi.TYPE_STRING)}
-    )})
-    def put(self, request, *args, **kwargs):
-        """
-        Add FOREIGN_AUTHOR_ID as a follower of AUTHOR_ID
-        """
-        try:
-            author_id = kwargs['author_id']
-            foreign_author_id = kwargs['foreign_author_id']
-            follow = Follower.objects.get(profile__id=author_id)
-            # if not follow.exists():
-            #     follow_remote = FollowerRemote.objects.filter()
-            #     if not follow_remote.exists():
-            #         FollowerRemote.objects.create(id=foreign_author_id)
-            # foreign_following = follow.followingRemote
-            # author_profile = Profile.objects.get(id=author_id)
+    # @swagger_auto_schema(responses={200: openapi.Schema(
+    #     type=openapi.TYPE_OBJECT,
+    #     properties={'message': openapi.Schema(type=openapi.TYPE_STRING)}
+    # )})
+    # def put(self, request, *args, **kwargs):
+    #     """
+    #     Add FOREIGN_AUTHOR_ID as a follower of AUTHOR_ID
+    #     """
+    #     try:
+    #         author_id = kwargs['author_id']
+    #         foreign_author_id = kwargs['foreign_author_id']
+    #         follow = Follower.objects.get(profile__id=author_id)
+    #         # if not follow.exists():
+    #         #     follow_remote = FollowerRemote.objects.filter()
+    #         #     if not follow_remote.exists():
+    #         #         FollowerRemote.objects.create(id=foreign_author_id)
+    #         # foreign_following = follow.followingRemote
+    #         # author_profile = Profile.objects.get(id=author_id)
             
-            if foreign_author_id not in follow.followingRemote.all():
-                follow.followingRemote.add(foreign_author_id)
-                return Response({'message': 'Now following.'}, status=200)
-            else:
-                return Response({'message': 'Already following.'}, status=200)
-        except Profile.DoesNotExist:
-            return Response({'error': 'Author does not exist'}, status=404)
-        except Follower.DoesNotExist:
-            FollowerRemote.objects.create(id=foreign_author_id)
-            return Response({'error': 'Foreign Author does not exist'}, status=404)
-            Profile.objects.create(id=foreign_author_id)
-            follow = Follower.objects.get(profile__id=foreign_author_id)
-            author_profile = Profile.objects.get(id=author_id)
-            follow.following.add(author_profile)
-            return Response({'message': 'Now following.'}, status=200)
+    #         if foreign_author_id not in follow.followingRemote.all():
+    #             follow.followingRemote.add(foreign_author_id)
+    #             return Response({'message': 'Now following.'}, status=200)
+    #         else:
+    #             return Response({'message': 'Already following.'}, status=200)
+    #     except Profile.DoesNotExist:
+    #         return Response({'error': 'Author does not exist'}, status=404)
+    #     except Follower.DoesNotExist:
+    #         FollowerRemote.objects.create(id=foreign_author_id)
+    #         return Response({'error': 'Foreign Author does not exist'}, status=404)
+    #         Profile.objects.create(id=foreign_author_id)
+    #         follow = Follower.objects.get(profile__id=foreign_author_id)
+    #         author_profile = Profile.objects.get(id=author_id)
+    #         follow.following.add(author_profile)
+    #         return Response({'message': 'Now following.'}, status=200)
 
 
-    def delete(self, request, *args, **kwargs):
-        """
-        Remove FOREIGN_AUTHOR_ID as a follower of AUTHOR_ID
-        """
-        try:
-            author_id = kwargs['author_id']
-            foreign_author_id = kwargs['foreign_author_id']
-            follow = Follower.objects.get(profile__id=foreign_author_id)
-            foreign_following = follow.following
-            author_profile = Profile.objects.get(id=author_id)
+    # def delete(self, request, *args, **kwargs):
+    #     """
+    #     Remove FOREIGN_AUTHOR_ID as a follower of AUTHOR_ID
+    #     """
+    #     try:
+    #         author_id = kwargs['author_id']
+    #         foreign_author_id = kwargs['foreign_author_id']
+    #         follow = Follower.objects.get(profile__id=foreign_author_id)
+    #         foreign_following = follow.following
+    #         author_profile = Profile.objects.get(id=author_id)
 
-            if author_profile in foreign_following.all():
-                foreign_following.remove(author_profile)
-                return Response({'message': 'Now unfollowed'}, status=200)
-            else:
-                return Response({'message': 'Cannot unfollow, not following.'}, status=200)
-        except Follower.DoesNotExist:
-            return Response({'error': 'Author does not exist'}, status=404)
-        except Profile.DoesNotExist:
-            return Response({'error': 'Foreign Author does not exist'}, status=404)
-'''
+    #         if author_profile in foreign_following.all():
+    #             foreign_following.remove(author_profile)
+    #             return Response({'message': 'Now unfollowed'}, status=200)
+    #         else:
+    #             return Response({'message': 'Cannot unfollow, not following.'}, status=200)
+    #     except Follower.DoesNotExist:
+    #         return Response({'error': 'Author does not exist'}, status=404)
+    #     except Profile.DoesNotExist:
+    #         return Response({'error': 'Foreign Author does not exist'}, status=404)
 
 class Comments(APIView):
     @swagger_auto_schema(responses={200: CommentSerializer(many=True)})
