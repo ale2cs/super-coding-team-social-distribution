@@ -13,4 +13,5 @@ urlpatterns = [
     path('<str:author_id>/posts/<str:post_id>/likes', views.LikesOnPost.as_view(), name='likes-on-post'),
     path('<str:author_id>/posts/<str:post_id>/comments/<str:comment_id>/likes', views.LikesOnComment.as_view(), name='likes-on-comment'),
     path('<str:author_id>/inbox', views.InboxAdd.as_view(), name='inbox'),
+    path('<str:author_id>/posts/<str:post_id>/image', views.ImageView.as_view(), name='image'),
 ]
