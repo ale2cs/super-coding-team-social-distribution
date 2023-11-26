@@ -28,3 +28,8 @@ def validate_paginator_parameters(size, page):
 def create_basic_auth_header(username, password):
     credentials = base64.b64encode(f"{username}:{password}".encode('utf-8')).decode('utf-8')
     return {'Authorization': f'Basic {credentials}'}
+
+def validate_response(response):
+    if response.status_code in [400, 401, 404]:
+        return {}
+    return response.json()

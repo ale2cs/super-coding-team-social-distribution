@@ -13,7 +13,11 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.username
-   
+
+class FollowerRemote(models.Model):
+    following_author = models.ForeignKey(Profile, on_delete=models.CASCADE, default=None)
+    remote_id = models.CharField(max_length=300, default=None)
+
 class Follower(models.Model):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE, related_name='profile')
     following = models.ManyToManyField(Profile, related_name='followed_by', symmetrical=False, blank=True)
