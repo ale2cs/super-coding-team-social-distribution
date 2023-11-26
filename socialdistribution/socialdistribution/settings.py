@@ -63,7 +63,14 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
 ]
 
-CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:3000', 'http://localhost:3000']
+CSRF_TRUSTED_ORIGINS = [
+    'http://127.0.0.1:3000', 
+    'http://localhost:3000',
+    'http://127.0.0.1:8000', 
+    'http://localhost:8000',
+    'https://socialsync-404-project-6469dd163e44.herokuapp.com',
+    'https://packet-pirates-backend-d3f5451fdee4.herokuapp.com'
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 
