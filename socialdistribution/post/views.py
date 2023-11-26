@@ -25,10 +25,15 @@ def home_page(request):
                 continue
             node_authors = node_authors_data['items']
             node_posts = []
+            node_images = {}
             for index, remote_author in enumerate(node_authors):
                 node_post_data = postservices.get_posts_from_node(node, remote_author['id'])
                 for post in node_post_data:
                     if post['visibility'] == 'public':
+                        # get image
+                        node_image_data = postservices.get_image_from_node(node, post['id'])
+                        if node_image_data['image'] != "":
+                                node_images[post['id']] = node_image_data['image']
                         node_posts.append(post)
             nodes_map[node] = node_posts
 
@@ -39,7 +44,7 @@ def home_page(request):
         is_public = Q(Q(visibility="public"), Q(unlisted=False))
         is_friend_post = Q(Q(visibility="friends"), Q(author__in=friends))
         posts = Post.objects.all().filter(own_post | is_public | is_friend_post).order_by("-published")
-        
+                
         if request.method == "POST":
             form = CreatePostForm(request.POST, request.FILES)
             action = request.POST['post']
@@ -61,7 +66,7 @@ def home_page(request):
                     return redirect('home')
         else:
             form = CreatePostForm()
-        return render(request, 'home.html', {"posts":posts, "form":form, "nodes":nodes_map})
+        return render(request, 'home.html', {"posts":posts, "form":form, "nodes":nodes_map, "images":node_images})
 
 
 def post_like(request, pk):
