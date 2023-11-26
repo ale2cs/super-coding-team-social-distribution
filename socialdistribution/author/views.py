@@ -148,12 +148,35 @@ def friends_list(request):
 
 @login_required
 def send_remote_follow(request, remote_author, node):
+    # author_node = Node.objects.get(name=node)
+    # services.put_follower_into_node(author_node, request.user.profile.id, remote_author)
+    # return redirect('social')
     author_node = Node.objects.get(name=node)
-    services.put_follower_into_node(author_node, request.user.profile.id, remote_author)
+    
+    # Check if a follow request already exists
+    existing_request = FriendFollowRequest.objects.filter(follower=request.user.profile, followee=remote_author, status='pending').first()
+    
+    if not existing_request:
+        FriendFollowRequest.objects.create(summary="Follow request", follower=request.user.profile, followee=remote_author)
+    
     return redirect('social')
         
 @login_required
 def send_remote_unfollow(request, remote_author, node):
     author_node = Node.objects.get(name=node)
     services.delete_follower_from_node(author_node, request.user.profile.id, remote_author)
+    return redirect('social')
+
+@login_required
+def respond_to_follow_request(request, friend_request_id, action):
+    friend_request = FriendFollowRequest.objects.get(pk=friend_request_id)
+    
+    if friend_request.followee == request.user.profile:
+        if action == 'accept':
+            friend_request.status = 'accepted'
+            friend_request.save()
+        elif action == 'decline':
+            friend_request.status = 'declined'
+            friend_request.save()
+    
     return redirect('social')

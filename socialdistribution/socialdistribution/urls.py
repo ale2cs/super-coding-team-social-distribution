@@ -41,7 +41,7 @@ urlpatterns = [
     path('', include('author.urls')),
     path('', include('post.urls')),
     path('', include('inbox.urls')),
-    path('service/', include('api.urls')),
+    path('authors/', include('api.urls')),
     path('login/', CustomLoginView.as_view(redirect_authenticated_user=True, template_name='login.html', authentication_form=LoginUser), name='login'),
     path('logout/', auth_views.LogoutView.as_view(template_name='logout.html'), name='logout'),
     path('password-change/', ChangePasswordView.as_view(), name='password_change'),

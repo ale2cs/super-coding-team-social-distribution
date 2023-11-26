@@ -27,7 +27,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request:
             host = request.build_absolute_uri('/')
-            url = f"{host}service/authors/{rep['id']}"
+            url = f"{host}authors/{rep['id']}"
             rep['host'] = host
             rep['id'] = url
             rep['url'] = url
@@ -66,7 +66,7 @@ class PostSerializer(serializers.ModelSerializer):
             rep['author'] = profile_serializer.data
             path = request.build_absolute_uri()
             host = request.build_absolute_uri('/')
-            rep['id'] = f'{host}service/authors/{instance.author_id}/posts/{instance.id}'
+            rep['id'] = f'{host}authors/{instance.author_id}/posts/{instance.id}'
             rep['source'] = path
             rep['origin'] = path
         _, comment_count = instance.get_comments()
@@ -98,7 +98,7 @@ class LikeSerializer(serializers.ModelSerializer):
             host = request.build_absolute_uri('/')
             rep['@context'] = 'https://www.w3.org/ns/activitystreams'
             rep['author'] = profile_serializer.data
-            rep['object'] = f'{host}service/authors/{author.id}/posts/{post.id}'
+            rep['object'] = f'{host}authors/{author.id}/posts/{post.id}'
         return rep
 
     class Meta:
@@ -126,7 +126,7 @@ class CommentLikeSerializer(serializers.ModelSerializer):
             host = request.build_absolute_uri('/')
             rep['@context'] = 'https://www.w3.org/ns/activitystreams'
             rep['author'] = profile_serializer.data
-            rep['object'] = f'{host}service/authors/{author.id}/posts/{post.id}/comment/{comment.id}'
+            rep['object'] = f'{host}authors/{author.id}/posts/{post.id}/comment/{comment.id}'
         return rep
 
     class Meta:
