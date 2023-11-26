@@ -98,6 +98,8 @@ def profile_list(request):
         nodes_map = {}
         for node in nodes:
             node_authors_data = services.get_authors_from_node(node)
+            if node_authors_data == {}:
+                continue
             node_authors = node_authors_data['items']
             for index, remote_author in enumerate(node_authors):
                 following_data = services.get_following_from_node(node, request.user.profile.id, remote_author['id'])

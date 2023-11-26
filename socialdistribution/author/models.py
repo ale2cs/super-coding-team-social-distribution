@@ -13,10 +13,14 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.username
-   
+
+class FollowerRemote(models.Model):
+    id = models.CharField(primary_key=True, max_length=300)
+
 class Follower(models.Model):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE, related_name='profile')
     following = models.ManyToManyField(Profile, related_name='followed_by', symmetrical=False, blank=True)
+    followingRemote = models.ManyToManyField(FollowerRemote, related_name='followed_by', symmetrical=False, blank=True)
 
     def get_followers(self):
         """
@@ -36,7 +40,6 @@ class Follower(models.Model):
         following = set(self.following.all())
         followers = set(self.get_followers())
         return list(following.intersection(followers))
-
 class FriendFollowRequest(models.Model):
     summary = models.CharField(max_length=200)
     follower = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='follower')
