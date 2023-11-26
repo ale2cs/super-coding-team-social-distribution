@@ -1,4 +1,7 @@
 import json
+from api.models import Node
+from . import services as postservices
+from author import services as authorservices
 from .models import Post, Like, Comment, CommentLike
 from author.models import Follower, Profile
 from inbox.models import Inbox
@@ -7,18 +10,44 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import CreatePostForm, CreateCommentForm
+from datetime import datetime
 
 # Create your views here.
 @login_required
 def home_page(request):
     if request.user.is_authenticated:
+
+        # retrieve remote posts
+        nodes = Node.objects.all()
+        nodes_map = {}
+        for node in nodes:
+            node_authors_data = authorservices.get_authors_from_node(node)
+            if node_authors_data == {}:
+                continue
+            node_authors = node_authors_data['items']
+            node_posts = []
+            node_images = {}
+            for index, remote_author in enumerate(node_authors):
+                node_post_data = postservices.get_posts_from_node(node, remote_author['id'])
+                for post in node_post_data:
+                    if post['visibility'] == 'public':
+                        # get image
+                        node_image_data = postservices.get_image_from_node(node, post['id'])
+                        if node_image_data['image'] != "":
+                                node_images[post['id']] = node_image_data['image']
+                        input_datetime = datetime.strptime(post['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
+                        post['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
+                        node_posts.append(post)
+            nodes_map[node] = node_posts
+
+        # retrieve local posts
         follow = Follower.objects.get(profile=request.user.profile)
         friends = follow.get_friends()
         own_post = Q(author=request.user.profile)
         is_public = Q(Q(visibility="public"), Q(unlisted=False))
         is_friend_post = Q(Q(visibility="friends"), Q(author__in=friends))
         posts = Post.objects.all().filter(own_post | is_public | is_friend_post).order_by("-published")
-        
+                
         if request.method == "POST":
             form = CreatePostForm(request.POST, request.FILES)
             action = request.POST['post']
@@ -40,7 +69,7 @@ def home_page(request):
                     return redirect('home')
         else:
             form = CreatePostForm()
-        return render(request, 'home.html', {"posts":posts, "form":form})
+        return render(request, 'home.html', {"posts":posts, "form":form, "nodes":nodes_map, "images":node_images})
 
 
 def post_like(request, pk):

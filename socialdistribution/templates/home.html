@@ -18,6 +18,51 @@
         <hr class="my-4">
     </div>
 
+    <h2>Remote Posts</h2>
+
+    {% for node, posts in nodes.items %}
+        <h4>Remote Posts on {{ node.name }}</h4>
+        {% if posts %}
+            {% for post in posts %}
+                <div class="alert alert-light" role="alert">
+                    <div class="position-absolute top-0 end-0">
+                        <form>
+                            {% csrf_token %}
+                            <a class="btn btn-success btn-outline-primary">View</a>
+                        </form>
+                    </div>
+                    <small class="text-muted">
+                        {{ post.author.displayName }} ({{ post.published }})<br/>
+                    </small>
+                    <strong>{{ post.title }}</strong><br/>
+                    {% if post.contentType == "markdown" %}
+                    {{ post.description | convert_markdown | safe}}
+                    {% else %}
+                    {{ post.description }}
+                    {% endif %}
+                    <br/>
+                    {% for id, image in images.items %}
+                        {% if id == post.id %}
+                        <div class="row my-3 p-3">
+                            <img class="img-fluid" src="{{ image }} " style="cursor: pointer;" width="200" height="200"/>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    <br/>
+                    {% if post.author.id == request.user.profile.id %}
+                    <a class="btn btn-primary text-decoration-none">Edit</a>
+                    <a class="btn btn-danger text-decoration-none">Delete</a>
+                    {% endif %}
+                </div><br/>
+            {% endfor %}
+        {% else %}
+            <p>No posts are available in this node.</p>
+        {% endif %}
+    {% endfor %}
+    <br/>
+
+    <h2>Local Posts</h2>
+
     {% for post in posts %}
 
         <div class="alert alert-light" role="alert">
