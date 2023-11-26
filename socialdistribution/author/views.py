@@ -1,4 +1,5 @@
 from api.models import Node
+from api.serializers import ProfileSerializer
 from . import services
 from .models import Profile, Follower, FriendFollowRequest, SiteConfiguration
 from inbox.models import Inbox
@@ -152,12 +153,23 @@ def send_remote_follow(request, remote_author, node):
     # services.put_follower_into_node(author_node, request.user.profile.id, remote_author)
     # return redirect('social')
     author_node = Node.objects.get(name=node)
+    user_profile = request.user.profile
+    serializer = ProfileSerializer(user_profile, context={'request':request})
     
+    data = {
+        'type': 'inbox',
+        'author': remote_author,
+        'items': [{
+            'type': 'follow',
+            'summary': f'{user_profile} wants to follow',
+            'object': serializer.data
+        }],
+    }
     # Check if a follow request already exists
-    existing_request = FriendFollowRequest.objects.filter(follower=request.user.profile, followee=remote_author, status='pending').first()
-    
-    if not existing_request:
-        FriendFollowRequest.objects.create(summary="Follow request", follower=request.user.profile, followee=remote_author)
+    # existing_request = FriendFollowRequest.objects.filter(follower=request.user.profile, followee=remote_author, status='pending').first()
+    result = services.post_following_to_node(author_node, remote_author, data)
+    # if not existing_request:
+    #     FriendFollowRequest.objects.create(summary="Follow request", follower=request.user.profile, followee=remote_author)
     
     return redirect('social')
         
