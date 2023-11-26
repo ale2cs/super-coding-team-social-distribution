@@ -1,4 +1,5 @@
 import uuid
+import base64
 from django.db import models
 from django.utils import timezone
 

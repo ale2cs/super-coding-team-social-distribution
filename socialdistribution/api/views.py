@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from author.models import Follower, Profile, FriendFollowRequest
 from post.models import Post, Like, Comment, CommentLike
 from inbox.models import Inbox
-from .serializers import ProfileSerializer, PostSerializer, LikeSerializer, CommentSerializer, FollowSerializer, InboxSerializer, CommentLikeSerializer
+from .serializers import ProfileSerializer, PostSerializer, LikeSerializer, CommentSerializer, FollowSerializer, InboxSerializer, CommentLikeSerializer, ImageSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.paginator import Paginator
@@ -314,6 +314,18 @@ class LikedPosts(APIView):
         author_likes = Like.objects.filter(Q(author_id=author_id) & public_post_query)
         serializer = LikeSerializer(author_likes, many=True, context={'request': request})
         return Response({'type': 'liked', 'items':serializer.data}, status=200)
+
+class ImageView(APIView):
+    def get(self, request, *args, **kwargs):
+        """
+        Returns the public post converted to binary as an image
+        Returns 404 if not an image
+        """
+        author_id = kwargs['author_id']
+        post_id = kwargs['post_id']
+        post = Post.objects.get(id=post_id)
+        serializer = ImageSerializer(post, context={'request': request})
+        return Response(serializer.data, status=200)
 
 class InboxAdd(APIView):
     @swagger_auto_schema(request_body=openapi.Schema(

@@ -163,6 +163,27 @@ class FollowSerializer(serializers.ModelSerializer):
     class Meta:
         model = FriendFollowRequest
         fields = ['type', 'summary', 'actor', 'object']
+    
+
+class ImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    def get_image(self, instance):
+        return ''
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        request = self.context.get('request')
+        if instance.image_file:
+            host = request.build_absolute_uri('/')
+            rep['image'] = f'{host}media/{instance.image_file}'
+        if instance.image_url:
+            rep['image'] = f'{instance.image_url}'
+        return rep
+    class Meta:
+        model = Post
+        fields = ['image']
+
 class InboxSerializer(serializers.ModelSerializer):
     '''
     Does not work, tried using get_serializer
