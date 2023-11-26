@@ -192,11 +192,12 @@ class FollowersAction(APIView):
         try:
             author_id = kwargs['author_id']
             foreign_author_id = kwargs['foreign_author_id']
-            author_followers = Follower.objects.get(profile__id=author_id)
-            is_follower = author_followers.followingRemote.filter(id=foreign_author_id).exists()
+            is_follower = FollowerRemote.objects.filter(
+                following_author__id=author_id,
+                remote_id=foreign_author_id).exists()
             response_data = {'is_follower': is_follower}
             return Response(response_data, status=200)
-        except Follower.DoesNotExist:
+        except FollowerRemote.DoesNotExist:
             return Response({'error': 'Author does not exist'}, status=404)
 
     # @swagger_auto_schema(responses={200: openapi.Schema(
