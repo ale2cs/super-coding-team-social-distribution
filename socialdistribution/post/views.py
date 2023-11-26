@@ -38,6 +38,7 @@ def home_page(request):
                         input_datetime = datetime.strptime(post['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
                         post['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
                         node_posts.append(post)
+            node_posts.reverse()
             nodes_map[node] = node_posts
 
         # retrieve local posts
