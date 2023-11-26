@@ -20,13 +20,13 @@ def home_page(request):
         # retrieve remote posts
         nodes = Node.objects.all()
         nodes_map = {}
+        node_images = {}
         for node in nodes:
             node_authors_data = authorservices.get_authors_from_node(node)
             if node_authors_data == {}:
                 continue
             node_authors = node_authors_data['items']
             node_posts = []
-            node_images = {}
             for index, remote_author in enumerate(node_authors):
                 node_post_data = postservices.get_posts_from_node(node, remote_author['id'])
                 for post in node_post_data:
