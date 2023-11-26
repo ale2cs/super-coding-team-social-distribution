@@ -18,6 +18,25 @@
         <hr class="my-4">
     </div>
 
+    <p class="lead">
+        Remote Posts
+    </p>
+
+    {% for node, posts in nodes.items %}
+        Remote Posts on {{ node.name }} <br/>
+        {% if posts %}
+            {% for post in posts %}
+                <small class="text-muted">
+                    {{ post.author.displayName }} {{ post.published|slice:"10" }} {{ post.published|slice:"11:19" }}<br/>
+                </small>
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+
+    <p class="lead">
+        Local Posts
+    </p>
+
     {% for post in posts %}
 
         <div class="alert alert-light" role="alert">

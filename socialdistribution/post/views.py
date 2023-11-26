@@ -1,4 +1,7 @@
 import json
+from api.models import Node
+from . import services as postservices
+from author import services as authorservices
 from .models import Post, Like, Comment, CommentLike
 from author.models import Follower, Profile
 from inbox.models import Inbox
@@ -12,6 +15,24 @@ from .forms import CreatePostForm, CreateCommentForm
 @login_required
 def home_page(request):
     if request.user.is_authenticated:
+
+        # retrieve remote posts
+        nodes = Node.objects.all()
+        nodes_map = {}
+        for node in nodes:
+            node_authors_data = authorservices.get_authors_from_node(node)
+            if node_authors_data == {}:
+                continue
+            node_authors = node_authors_data['items']
+            node_posts = []
+            for index, remote_author in enumerate(node_authors):
+                node_post_data = postservices.get_posts_from_node(node, remote_author['id'])
+                for post in node_post_data:
+                    if post['visibility'] == 'public':
+                        node_posts.append(post)
+            nodes_map[node] = node_posts
+
+        # retrieve local posts
         follow = Follower.objects.get(profile=request.user.profile)
         friends = follow.get_friends()
         own_post = Q(author=request.user.profile)
@@ -40,7 +61,7 @@ def home_page(request):
                     return redirect('home')
         else:
             form = CreatePostForm()
-        return render(request, 'home.html', {"posts":posts, "form":form})
+        return render(request, 'home.html', {"posts":posts, "form":form, "nodes":nodes_map})
 
 
 def post_like(request, pk):
