@@ -10,6 +10,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import CreatePostForm, CreateCommentForm
+from datetime import datetime
 
 # Create your views here.
 @login_required
@@ -34,6 +35,8 @@ def home_page(request):
                         node_image_data = postservices.get_image_from_node(node, post['id'])
                         if node_image_data['image'] != "":
                                 node_images[post['id']] = node_image_data['image']
+                        input_datetime = datetime.strptime(post['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
+                        post['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
                         node_posts.append(post)
             nodes_map[node] = node_posts
 

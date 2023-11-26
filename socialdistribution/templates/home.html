@@ -32,7 +32,7 @@
                         </form>
                     </div>
                     <small class="text-muted">
-                        {{ post.author.displayName }} ({{ post.published|slice:"10" }} {{ post.published|slice:"11:19" }})<br/>
+                        {{ post.author.displayName }} ({{ post.published }})<br/>
                     </small>
                     <strong>{{ post.title }}</strong><br/>
                     {% if post.contentType == "markdown" %}
