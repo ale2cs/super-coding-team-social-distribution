@@ -4,7 +4,7 @@ from django.db.models import Q
 from rest_framework.views import APIView
 from author.models import Follower, FollowerRemote, Profile, RemoteFriendFollowRequest
 from post.models import Post, Like, Comment, CommentLike
-from inbox.models import Inbox, RemoteInbox, RemoteInboxItem
+from inbox.models import Inbox, RemoteInbox
 from .serializers import ProfileSerializer, PostSerializer, LikeSerializer, CommentSerializer, FollowSerializer, InboxSerializer, CommentLikeSerializer, ImageSerializer
 from rest_framework.response import Response
 from rest_framework import status
@@ -375,13 +375,14 @@ class InboxAdd(APIView):
             inbox = RemoteInbox.objects.get(author_id=author_id)
         except RemoteInbox.DoesNotExist:
             return Response({'message': 'AUTHOR_ID does not exist'}, status=404)
+        
+        if type_value.lower() == 'post': 
+            inbox.items.append(request_data)
+            inbox.save()
+            return Response(request_data, status=status.HTTP_200_OK)
 
-        if type_value == 'post':
-            post = request_data['id']
-            print(post)
-
-        elif type_value == 'follow':
-            actor_id = request_data['actor']['id']
+        elif type_value.lower() == 'follow':
+            remote_author_url = request_data['actor']['id']
             local_author_id = request_data['object']['id'].split('/')[-1]
             local_author = Profile.objects.get(id=local_author_id)
             actor_name = request_data['actor']['displayName'] 
@@ -389,15 +390,21 @@ class InboxAdd(APIView):
             desc = f"{actor_name} wants to follow {local_author_name}"
             friend_request = RemoteFriendFollowRequest.objects.create(
                 summary = desc,
-                follower = actor_id,
+                follower = remote_author_url,
                 followee = local_author,
             )
             inbox.requests.add(friend_request)
+            inbox.save()
             return Response(request_data, status=status.HTTP_200_OK)
 
-        elif type_value == 'commment':
-            comment = request_data['id']
-            print(comment)
+        elif type_value.lower() == 'comment':
+            inbox.items.append(request_data)
+            inbox.save()
+            return Response(request_data, status=status.HTTP_200_OK)
 
-        elif type_value == 'like':
-            pass
+        elif type_value.lower() == 'like':
+            inbox.items.append(request_data)
+            inbox.save()
+            return Response(request_data, status=status.HTTP_200_OK)
+
+        return Response(status=status.HTTP_400_BAD_REQUEST)
