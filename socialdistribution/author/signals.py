@@ -11,7 +11,7 @@ def create_profile(sender, instance, created, **kwargs):
         new_profile =  Profile.objects.create(user=instance)
         Follower.objects.create(profile=new_profile)
         Inbox.objects.create(user=new_profile)
-        RemoteInbox.objects.create(author=new_profile)
+        RemoteInbox.objects.create(author=new_profile, items=[])
         
 
 @receiver(post_save, sender=User)

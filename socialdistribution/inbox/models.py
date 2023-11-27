@@ -66,8 +66,12 @@ class Inbox(models.Model):
         except AttributeError:
             return []
         return comment_likes
+    
 
+def default_items():
+    return []
 class RemoteInbox(models.Model):
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
-    items = models.JSONField(default=list)
+    items = models.JSONField(blank=True, null=True)
     requests = models.ManyToManyField('author.RemoteFriendFollowRequest', blank=True)
+
