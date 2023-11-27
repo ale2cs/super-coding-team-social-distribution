@@ -71,9 +71,25 @@ CSRF_TRUSTED_ORIGINS = [
     'https://socialsync-404-project-6469dd163e44.herokuapp.com',
     'https://packet-pirates-backend-d3f5451fdee4.herokuapp.com'
     ]
+CORS_ALLOWED_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
+CORS_ALLOW_METHODS = (
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+)
 CORS_ALLOW_CREDENTIALS = True
-
+CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'socialdistribution.urls'
