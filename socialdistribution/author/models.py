@@ -54,5 +54,18 @@ class FriendFollowRequest(models.Model):
         self.status = 'declined'
         self.save()
 
+class RemoteFriendFollowRequest(models.Model):
+    summary = models.CharField(max_length=200)
+    follower = models.CharField(max_length=300, default=None)
+    followee = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, default='pending')
+    def accept(self):
+        self.status = 'accepted'
+        self.save()
+
+    def decline(self):
+        self.status = 'declined'
+        self.save()
+
 class SiteConfiguration(models.Model):
     user_approval_required = models.BooleanField(default=True)
