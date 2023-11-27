@@ -219,3 +219,25 @@ def share_post(request, post_id, friend_id):
         return redirect("view_post", post_id)
     return render(request, "share_post.html", {'shared_posts':inbox.get_posts(), 'post':post})
 
+@login_required
+def view_remote_post(request, node, remote_post):
+
+    # get the remote post
+    cur_node = Node.objects.get(name=node)
+    post_details = ""
+    node_image = ""
+    node_authors_data = authorservices.get_authors_from_node(cur_node)
+    if node_authors_data != {}:
+        node_authors = node_authors_data['items']
+        for index, remote_author in enumerate(node_authors):
+            node_post_data = postservices.get_posts_from_node(cur_node, remote_author['id'])
+            for post in node_post_data:
+                if str(post['id']) == remote_post:
+                    node_image_data = postservices.get_image_from_node(cur_node, post['id'])
+                    if node_image_data['image'] != "":
+                            node_image = node_image_data['image']
+                    input_datetime = datetime.strptime(post['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
+                    post['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
+                    post_details = post
+
+    return render(request, "view_remote_post.html", {'post_details':post_details, 'image':node_image})

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load social_extra %}
+
+
+{% block title %} View Post {% endblock title%}
+{% block content %}
+    <div class="container text-center">
+
+    <div class="jumbotron">
+        <h1 class="display-4 pt-2">View Post</h1>
+        <hr class="my-4">
+    </div>
+
+    <div class="container text-center">
+        <div class="row">
+            <div class="col-10">
+
+            <h3>Post Details</h3>
+            <div class="alert alert-light" role="alert">
+                <div class="position-absolute top-0 end-0">
+                    <small class="text-muted">
+                        Likes: <br/>
+                        Comments:
+                    </small>
+                </div>
+                <small class="text-muted">
+                    {{ post_details.author.displayName }} ({{ post_details.published }})<br/>
+                </small>
+                <strong>{{ post_details.title }}</strong><br/>
+                {% if post_details.contentType == "markdown" %}
+                {{ post_details.description | convert_markdown | safe}}
+                {% else %}
+                {{ post_details.description }}
+                {% endif %}
+                <br/>
+                <br/>
+                {% if image %}
+                    <div class="row my-3 p-3">
+                        <img class="img-fluid" src="{{ image }} " style="cursor: pointer;" width="200" height="200"/>
+                    </div>
+                {% endif %}
+                <br/>
+
+        </div><br/>
+    </div>
+
+{% endblock content %}
