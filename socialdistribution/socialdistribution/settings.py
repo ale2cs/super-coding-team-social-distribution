@@ -68,6 +68,8 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:8000', 
     'http://localhost:8000',
+    'https://super-coding-team-89a5aa34a95f.herokuapp.com',
+    'https://super-code-team-clone-9a3d162e87a7.herokuapp.com',
     'https://socialsync-404-project-6469dd163e44.herokuapp.com',
     'https://packet-pirates-backend-d3f5451fdee4.herokuapp.com'
     ]

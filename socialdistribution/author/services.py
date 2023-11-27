@@ -20,7 +20,10 @@ def get_following_from_node(node, author_id, remote_author_id):
             url=f"{remote_author_id}/followers/{author_id}",
             headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
         )
-    return validate_response(response)
+    result = validate_response(response)
+    if isinstance(result, bool):
+                    result = {'is_follower': result}
+    return result
 
 def post_following_to_node(node, remote_author_id, data):
     response = requests.post(
