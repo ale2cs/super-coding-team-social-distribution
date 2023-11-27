@@ -30,6 +30,6 @@ def create_basic_auth_header(username, password):
     return {'Authorization': f'Basic {credentials}'}
 
 def validate_response(response):
-    if response.status_code in [400, 401, 404, 500]:
-        return {}
-    return response.json()
+    if response.status_code in [200, 201, 204]:
+        return response.json()
+    return {}
