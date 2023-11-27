@@ -2,14 +2,14 @@ import json
 from api.models import Node
 from . import services as postservices
 from author import services as authorservices
-from .models import Post, Like, Comment, CommentLike
+from .models import Post, Like, Comment, CommentLike, RemoteLike, RemoteComment
 from author.models import Follower, Profile
 from inbox.models import Inbox
 from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import CreatePostForm, CreateCommentForm
+from .forms import CreatePostForm, CreateCommentForm, CreateRemoteCommentForm
 from datetime import datetime
 
 # Create your views here.
@@ -222,6 +222,10 @@ def share_post(request, post_id, friend_id):
 @login_required
 def view_remote_post(request, node, remote_post):
 
+    likes = 0
+    comment_count = 0
+    comments = []
+
     # get the remote post
     cur_node = Node.objects.get(name=node)
     post_details = ""
@@ -240,4 +244,55 @@ def view_remote_post(request, node, remote_post):
                     post['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
                     post_details = post
 
-    return render(request, "view_remote_post.html", {'post_details':post_details, 'image':node_image})
+    # get remote comments and likes
+    remote_comments = []
+    node_comments_data = postservices.get_comments_from_node(cur_node, post_details['id'])
+    for comment in node_comments_data['comments']:
+        input_datetime = datetime.strptime(comment['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        comment['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
+        remote_comments.append(comment)
+        comment_count += 1
+    comments.append(remote_comments)
+
+    node_likes_data = postservices.get_likes_from_node(cur_node, post_details['id'])
+    likes += len(node_likes_data)
+
+    # get local like/unlike button for post
+    current_user = request.user.profile
+    liked = True
+    data = RemoteLike.objects.filter(post=remote_post, author=current_user)
+    if len(data) > 0:
+        liked = True
+    else:
+        liked = False
+    
+    # retrieve local comments and likes
+    local_likes = RemoteLike.objects.all().filter(post=remote_post)
+    likes += len(local_likes)
+    local_comments = RemoteComment.objects.all().filter(post=remote_post)
+    comments += [local_comments]
+    comment_count += len(local_comments)
+
+    # create local comments and likes
+    form = CreateRemoteCommentForm(request.POST or None)
+    if request.method == "POST":
+        action = request.POST['action']
+        if action == "like":
+            likeSummary = current_user.user.username + " liked your post!"
+            like = RemoteLike(summary=likeSummary,author=current_user, post=remote_post) 
+            like.save()
+            #inbox.likes.add(like)
+            messages.success(request, ("Post Liked successfully!"))
+        elif action == "unlike":
+            like = RemoteLike.objects.filter(post=remote_post, author=current_user).delete()
+            messages.success(request, ("Post unliked successfully!"))
+        elif action == "comment":
+            if form.is_valid():
+                comment = form.save(commit=False)
+                comment.author = request.user.profile
+                comment.post = remote_post
+                comment.save()
+                #inbox.comments.add(comment)
+                messages.success(request, ("Commented on post successfully!"))
+        return redirect("home")
+    return render(request, "view_remote_post.html", {'post_details':post_details, 'image':node_image, 'comments':comments, 'form':form, 'liked':liked, 'likes':likes, 'comment_count':comment_count})

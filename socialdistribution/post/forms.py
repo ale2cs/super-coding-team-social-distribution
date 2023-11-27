@@ -1,5 +1,5 @@
 from django import forms 
-from .models import Post, Comment
+from .models import Post, Comment, RemoteComment
 
 # contains different forms that the user interacts with
 # e.g posts, comments, etc.
@@ -56,4 +56,20 @@ class CreateCommentForm(forms.ModelForm):
 
     class Meta:
         model = Comment
+        fields = ['content', 'contentType']
+
+class CreateRemoteCommentForm(forms.ModelForm):
+
+    content = forms.CharField(max_length=200, 
+                              required=False,
+                              widget=forms.Textarea(attrs={'placeholder': 'Enter your comment here',
+                                                           'class':'form-control',
+                                                           }),
+                                                           label="",
+                                                           )
+    
+    contentType = forms.ChoiceField(required=True, choices=(('plaintext','PLAINTEXT'), ('markdown', 'MARKDOWN')))
+
+    class Meta:
+        model = RemoteComment
         fields = ['content', 'contentType']
