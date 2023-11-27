@@ -286,6 +286,19 @@ class Comments(APIView):
                          'post': post_link, 'comments': comment_serializer.data}
                          , status=200)
 
+class OneComment(APIView):
+    @swagger_auto_schema(responses={200: CommentSerializer})
+    def get(self, request, *args, **kwargs):
+        """
+        Returns the comment of the post whose post_id is POST_ID and 
+        id is COMMENT_ID
+        """
+        post_id = kwargs['post_id']
+        comment_id = kwargs['comment_id']
+        comment = Comment.objects.get(post_id=post_id, id=comment_id)
+        comment_serializer = CommentSerializer(comment, context={'request': request})
+        return Response(comment_serializer.data, status=200)
+
 class LikesOnPost(APIView):
     @swagger_auto_schema(responses={200: CommentSerializer(many=True)})
     def get(self, request, *args, **kwargs):

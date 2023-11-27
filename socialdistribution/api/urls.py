@@ -7,6 +7,7 @@ urlpatterns = [
     path('<str:author_id>/posts', views.PostList.as_view(), name='post-list'),
     path('<str:author_id>/posts/<str:post_id>', views.PostDetail.as_view(), name='post-detail'),
     path('<str:author_id>/posts/<str:post_id>/comments', views.Comments.as_view(), name='comment'),
+    path('<str:author_id>/posts/<str:post_id>/comments/<str:comment_id>', views.OneComment.as_view(), name='one-comment'),
     path('<str:author_id>/followers', views.Followers.as_view(), name='followers'),
     path('<str:author_id>/followers/<str:foreign_author_id>', views.FollowersAction.as_view(), name='followers-action'),
     path('<str:author_id>/liked', views.LikedPosts.as_view(), name='liked-list'),
