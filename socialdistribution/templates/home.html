@@ -28,7 +28,7 @@
                     <div class="position-absolute top-0 end-0">
                         <form>
                             {% csrf_token %}
-                            <a class="btn btn-success btn-outline-primary">View</a>
+                            <a href="{% url 'view_remote_post' node=node.name remote_post=post.id %}" class="btn btn-success btn-outline-primary">View</a>
                         </form>
                     </div>
                     <small class="text-muted">
