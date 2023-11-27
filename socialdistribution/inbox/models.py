@@ -66,3 +66,12 @@ class Inbox(models.Model):
         except AttributeError:
             return []
         return comment_likes
+
+class RemoteInbox(models.Model):
+    author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
+    items = models.ManyToManyField('inbox.RemoteInboxItem', blank=True)
+    requests = models.ManyToManyField('author.RemoteFriendFollowRequest', blank=True)
+
+class RemoteInboxItem(models.Model):
+    type = models.CharField(max_length=200)
+    id_url = models.CharField(max_length=200)

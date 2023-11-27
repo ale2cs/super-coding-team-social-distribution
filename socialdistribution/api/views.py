@@ -2,9 +2,9 @@ import json
 from django.db import IntegrityError
 from django.db.models import Q
 from rest_framework.views import APIView
-from author.models import Follower, FollowerRemote, Profile, FriendFollowRequest
+from author.models import Follower, FollowerRemote, Profile, RemoteFriendFollowRequest
 from post.models import Post, Like, Comment, CommentLike
-from inbox.models import Inbox
+from inbox.models import Inbox, RemoteInbox, RemoteInboxItem
 from .serializers import ProfileSerializer, PostSerializer, LikeSerializer, CommentSerializer, FollowSerializer, InboxSerializer, CommentLikeSerializer, ImageSerializer
 from rest_framework.response import Response
 from rest_framework import status
@@ -355,56 +355,36 @@ class InboxAdd(APIView):
         Adds a post, follow, like, or comment object to AUTHOR_ID's inbox
         """
         author_id = kwargs['author_id']
-        try:
-            inbox = Inbox.objects.get(user_id=author_id)
-        except Inbox.DoesNotExist:
-            return Response({'message': 'AUTHOR_ID does not exist'},status=404)
-        new_object = False
         request_data = json.loads(request.body.decode("utf-8"))
         type_value = request_data['type']
+
+        try:
+            inbox = RemoteInbox.objects.get(author_id=author_id)
+        except RemoteInbox.DoesNotExist:
+            return Response({'message': 'AUTHOR_ID does not exist'}, status=404)
+
         if type_value == 'post':
-            post_id = request_data['id'].split('/')[-1]
-            try:
-                post = Post.objects.get(id=post_id)
-                serializer = PostSerializer(post, context={'request': request})
-            except Post.DoesNotExist:
-                request_data['id'] = post_id
-                serializer = PostSerializer(data=request_data, context={'request': request})
-                post = Post.objects.get(id=post_id)
-                new_object = True 
-            if post not in inbox.posts.all():
-                inbox.posts.add(post)
+            post = request_data['id']
+            print(post)
+
         elif type_value == 'follow':
-            # TODO not working
-            actor_id = request_data['actor']
-            object_id = request_data['object']
-            try:
-                friend_request = FriendFollowRequest.objects.get(follower_id=actor_id, followee_id=object_id)
-                serializer = FollowSerializer(friend_request, context={'request': request})
-            except FriendFollowRequest.DoesNotExist:
-                serializer = FollowSerializer(data=request_data, context={'request': request})
-                friend_request = FriendFollowRequest.objects.get(follower_id=actor_id, followee_id=object_id)
-                new_object = True
-            if friend_request not in inbox.requests.all():
-                inbox.requests.add(friend_request)
+            actor_id = request_data['actor']['id']
+            local_author_id = request_data['object']['id'].split('/')[-1]
+            local_author = Profile.objects.get(id=local_author_id)
+            actor_name = request_data['actor']['displayName'] 
+            local_author_name = request_data['object']['displayName']
+            desc = f"{actor_name} wants to follow {local_author_name}"
+            friend_request = RemoteFriendFollowRequest.objects.create(
+                summary = desc,
+                follower = actor_id,
+                followee = local_author,
+            )
+            inbox.requests.add(friend_request)
+            return Response(request_data, status=status.HTTP_200_OK)
+
         elif type_value == 'commment':
-            comment_id = request_data['id'].split('/')[-1]
-            try:
-                comment = Comment.objects.get(id=comment_id)
-                serializer = CommentSerializer(comment, context={'request': request})
-            except Comment.DoesNotExist:
-                request_data['id'] = comment_id
-                serializer = CommentSerializer(data=request_data, context={'request': request})
-                post = Comment.objects.get(id=comment_id)
-                new_object = True 
-            if comment not in inbox.posts.all():
-                inbox.comments.add(comment)
+            comment = request_data['id']
+            print(comment)
+
         elif type_value == 'like':
-            # TODO implement like
             pass
-        if new_object:
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=200)
-            return Response(serializer.errors, status=400)
-        return Response(serializer.data, status=200)

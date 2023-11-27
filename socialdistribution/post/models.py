@@ -43,6 +43,12 @@ class Like(models.Model):
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
     post = models.ForeignKey(Post, blank=True, null=True, on_delete=models.CASCADE)
 
+class RemoteLike(models.Model):
+    summary = models.CharField(max_length=200)
+    author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
+    post = models.CharField(max_length=200)
+
+
 class Comment(models.Model):
     id = models.CharField(default=uuid.uuid4, editable=False, primary_key=True, max_length=200)
     content = models.TextField()
@@ -69,6 +75,14 @@ class Comment(models.Model):
         if len(data) > 0:
             return True
         return False
+
+class RemoteComment(models.Model):
+    id = models.CharField(default=uuid.uuid4, editable=False, primary_key=True, max_length=200)
+    content = models.TextField()
+    author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
+    post = models.CharField(max_length=200)
+    published = models.DateTimeField(auto_now_add=True)
+    contentType = models.CharField(max_length=200)
 
 class CommentLike(models.Model):
     summary = models.CharField(max_length=200)
