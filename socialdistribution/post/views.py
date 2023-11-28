@@ -33,7 +33,7 @@ def home_page(request):
                     if post['visibility'].lower() == 'public':
                         # get image
                         node_image_data = postservices.get_image_from_node(node, post['id'])
-                        if node_image_data == {}:  # packet pirate no image format ???
+                        if node_image_data == {}:
                             continue
                         elif type(node_image_data) == dict and node_image_data['image'] != "":  # our format
                             node_images[post['id']] = node_image_data['image']
@@ -243,8 +243,12 @@ def view_remote_post(request, node, remote_post):
             for post in node_post_data:
                 if str(post['id']) == remote_post:
                     node_image_data = postservices.get_image_from_node(cur_node, post['id'])
-                    if node_image_data['image'] != "":
-                            node_image = node_image_data['image']
+                    if node_image_data == {}:
+                        continue
+                    elif type(node_image_data) == dict and node_image_data['image'] != "":  # our format
+                        node_image = node_image_data['image']
+                    elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
+                        node_image = node_image_data
                     input_datetime = datetime.strptime(post['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
                     post['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
                     post_details = post
@@ -252,11 +256,12 @@ def view_remote_post(request, node, remote_post):
     # get remote comments and likes
     remote_comments = []
     node_comments_data = postservices.get_comments_from_node(cur_node, post_details['id'])
-    for comment in node_comments_data['comments']:
-        input_datetime = datetime.strptime(comment['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
-        comment['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
-        remote_comments.append(comment)
-        comment_count += 1
+    if node_comments_data != {}:
+        for comment in node_comments_data['comments']:
+            input_datetime = datetime.strptime(comment['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
+            comment['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
+            remote_comments.append(comment)
+            comment_count += 1
     comments.append(remote_comments)
 
     node_likes_data = postservices.get_likes_from_node(cur_node, post_details['id'])
@@ -286,7 +291,6 @@ def view_remote_post(request, node, remote_post):
             likeSummary = current_user.user.username + " liked your post!"
             like = RemoteLike(summary=likeSummary,author=current_user, post=remote_post) 
             like.save()
-            #inbox.likes.add(like)
             messages.success(request, ("Post Liked successfully!"))
         elif action == "unlike":
             like = RemoteLike.objects.filter(post=remote_post, author=current_user).delete()
@@ -297,7 +301,6 @@ def view_remote_post(request, node, remote_post):
                 comment.author = request.user.profile
                 comment.post = remote_post
                 comment.save()
-                #inbox.comments.add(comment)
                 messages.success(request, ("Commented on post successfully!"))
         return redirect("home")
     return render(request, "view_remote_post.html", {'post_details':post_details, 'image':node_image, 'comments':comments, 'form':form, 'liked':liked, 'likes':likes, 'comment_count':comment_count})
