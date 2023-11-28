@@ -7,6 +7,7 @@ def get_posts_from_node(node, remote_author_id):
                 url=f"{remote_author_id}/posts",
                 headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
             )
+        print(f'{remote_author_id}/posts')
         return validate_response(response)
     except:
         print(f"Error Connecting to node: {node.url}")
