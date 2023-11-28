@@ -30,11 +30,18 @@ def home_page(request):
             for index, remote_author in enumerate(node_authors):
                 node_post_data = postservices.get_posts_from_node(node, remote_author['id'])
                 for post in node_post_data:
-                    if post['visibility'] == 'public':
+                    if post['visibility'].lower() == 'public':
+                        print(post)
                         # get image
                         node_image_data = postservices.get_image_from_node(node, post['id'])
-                        if node_image_data['image'] != "":
-                                node_images[post['id']] = node_image_data['image']
+                        if node_image_data == {}:  # packet pirate no image format ???
+                            continue
+                        elif type(node_image_data) == dict and node_image_data['image'] != "":  # our format
+                            node_images[post['id']] = node_image_data['image']
+                            print("YEP")
+                        elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
+                            node_images[post['id']] = node_image_data
+
                         input_datetime = datetime.strptime(post['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
                         post['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
                         node_posts.append(post)
