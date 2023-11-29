@@ -1,7 +1,7 @@
 from api.models import Node
 from api.serializers import ProfileSerializer
 from . import services
-from .models import Profile, Follower, FriendFollowRequest, SiteConfiguration
+from .models import FollowerRemote, Profile, Follower, FriendFollowRequest, RemoteFriendFollowRequest, SiteConfiguration
 from inbox.models import Inbox
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -155,34 +155,29 @@ def friends_list(request):
 
 @login_required
 def send_remote_follow(request, remote_author, node):
-    # author_node = Node.objects.get(name=node)
-    # services.put_follower_into_node(author_node, request.user.profile.id, remote_author)
-    # return redirect('social')
     author_node = Node.objects.get(name=node)
     user_profile = request.user.profile
     serializer = ProfileSerializer(user_profile, context={'request':request})
-    
+    remote_author_data = services.get_author_from_node(author_node, remote_author)
+
     data = {
-        'type': 'inbox',
-        'author': remote_author,
-        'items': [{
-            'type': 'follow',
-            'summary': f'{user_profile} wants to follow',
-            'object': serializer.data
-        }],
+        'type': 'follow',
+        'summary': f'{user_profile} wants to follow',
+        'actor': serializer.data,
+        'object': remote_author_data
     }
-    # Check if a follow request already exists
-    # existing_request = FriendFollowRequest.objects.filter(follower=request.user.profile, followee=remote_author, status='pending').first()
-    result = services.post_following_to_node(author_node, remote_author, data)
-    # if not existing_request:
-    #     FriendFollowRequest.objects.create(summary="Follow request", follower=request.user.profile, followee=remote_author)
+    services.post_following_to_node(author_node, remote_author, data)
     
     return redirect('social')
         
 @login_required
 def send_remote_unfollow(request, remote_author, node):
-    author_node = Node.objects.get(name=node)
-    services.delete_follower_from_node(author_node, request.user.profile.id, remote_author)
+    follower_remote = FollowerRemote.objects.get(
+        following_author=request.user.profile,
+        remote_id=remote_author.split('/')[-1]
+    )
+    follower_remote.delete()
+    # services.delete_follower_from_node(author_node, request.user.profile.id, remote_author)
     return redirect('social')
 
 @login_required
@@ -191,6 +186,10 @@ def respond_to_follow_request(request, friend_request_id, action):
     
     if friend_request.followee == request.user.profile:
         if action == 'accept':
+            user_follower = Follower.objects.get(profile=request.user.profile)
+            user_followee = Follower.objects.get(profile=friend_request.follower)
+            user_follower.following.add(request.user.profile)
+            user_followee.following.add(friend_request.follower)
             friend_request.status = 'accepted'
             friend_request.save()
         elif action == 'decline':
@@ -198,3 +197,19 @@ def respond_to_follow_request(request, friend_request_id, action):
             friend_request.save()
     
     return redirect('social')
+
+@login_required
+def respond_to_remote_follow_request(request, remote_friend_request_id, action):
+    remote_friend_request = RemoteFriendFollowRequest.objects.get(pk=remote_friend_request_id)
+    
+    if remote_friend_request.followee == request.user.profile:
+        if action == 'accept':
+            remote_id = remote_friend_request.follower.split('/')[-1]
+            FollowerRemote.objects.create(following_author=request.user.profile, remote_id=remote_id)
+            remote_friend_request.status = 'accepted'
+            remote_friend_request.save()
+        elif action == 'decline':
+            remote_friend_request.status = 'declined'
+            remote_friend_request.save()
+    
+    return redirect('inbox')

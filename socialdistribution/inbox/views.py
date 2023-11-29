@@ -5,6 +5,7 @@ from post.models import Post
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from urllib.parse import urlparse
+from author import services
 
 # Create your views here.
 @login_required
@@ -43,20 +44,21 @@ def inbox(request):
     remote_requests = (remote_inbox.requests.all())
     remote_items = remote_inbox.items
 
-    for item in remote_items:
-        if item['type'].lower() == 'like':
-            item['post'] = {}
-            item['post']['id']= item['object'].split('/')[-1]
-            likes.append(item)
-        elif item['type'].lower() == 'comment':
-            url_parts = item['id'].split('/')
-            item['post'] = {}
-            item['post']['id'] = url_parts[url_parts.index('posts') + 1]
-            item['author'] = item['author']['displayName']
-            comments.append(item)
-        elif item['type'].lower() == 'post':
-            posts.append(item)
-
+    if remote_items != None:
+        for item in remote_items:
+            if item['type'].lower() == 'like':
+                item['post'] = {}
+                item['post']['id']= item['object'].split('/')[-1]
+                likes.append(item)
+            elif item['type'].lower() == 'comment':
+                url_parts = item['id'].split('/')
+                item['post'] = {}
+                item['post']['id'] = url_parts[url_parts.index('posts') + 1]
+                item['author'] = item['author']['displayName']
+                comments.append(item)
+            elif item['type'].lower() == 'post':
+                posts.append(item)
+                
     return render(request, 'inbox.html', {
         'likes':likes, 
         'comments':comments, 
