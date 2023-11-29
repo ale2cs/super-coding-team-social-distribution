@@ -12,9 +12,12 @@
 
     <div class="jumbotron">
         <h1 class="display-4 pt-2">Welcome to Social Distribution!</h1>
-        <p class="lead">
-            This is the stream page 
-        </p>
+        <div class="lead">
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" name="post" value="load_github" class="btn btn-secondary">Load Github</a>
+            </form>
+        </div>
         <hr class="my-4">
     </div>
 

@@ -12,6 +12,7 @@ from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
 from django.contrib.auth.views import PasswordChangeView
 from django.contrib.messages.views import SuccessMessageMixin
+from django.contrib.auth.models import User
 
 # Create your views here.
 class CustomLoginView(LoginView):
@@ -63,6 +64,11 @@ class register_profile(View):
             form.save()
 
             username = form.cleaned_data.get('username')
+            user = User.objects.get(username=username)
+            profile = Profile.objects.get(user=user)
+            profile.github = form.cleaned_data.get('github')
+            profile.save()
+            
             messages.success(request, f'Account created for {username}')
 
             return redirect(to='/')

@@ -1,4 +1,4 @@
-import json
+import json, requests
 from api.models import Node
 from . import services as postservices
 from author import services as authorservices
@@ -73,6 +73,17 @@ def home_page(request):
                             inbox = Inbox.objects.get(user=friend)
                             inbox.posts.add(post)
                     return redirect('home')
+            elif action == "load_github":
+                #print('loading github...')
+                details = load_github(request.user.profile)
+                if details != None:
+                    new_post = Post(title="Github Activities", description=details, author=request.user.profile, visibility="friends")
+                    new_post.save()
+                    messages.success(request, "Github activities post created sucessfully!")
+                else:
+                    messages.warning(request, "Invalid github profile!")
+            return redirect("home")
+
         else:
             form = CreatePostForm()
         return render(request, 'home.html', {"posts":posts, "form":form, "nodes":nodes_map, "images":node_images})
@@ -304,3 +315,37 @@ def view_remote_post(request, node, remote_post):
                 messages.success(request, ("Commented on post successfully!"))
         return redirect("home")
     return render(request, "view_remote_post.html", {'post_details':post_details, 'image':node_image, 'comments':comments, 'form':form, 'liked':liked, 'likes':likes, 'comment_count':comment_count})
+
+def load_github(user : Profile):
+    """
+    retrieve github activities for the author
+    """
+
+    username = user.github
+    if (not username):
+        return None
+    username = username.split("/")[3]
+    print(username)
+
+    # GitHub API endpoint for user's public activity feed    
+    url = f'https://api.github.com/users/{username}/events/public'
+
+    # Make a GET request to the API    
+    response = requests.get(url)
+
+    # Check if the request was successful    
+    if response.status_code == 200:    
+    # Parse the JSON response    
+        activity = response.json()    
+
+        details = ""
+        # Print the user's public activity    
+        for event in activity:    
+            #print(json.dumps(event, indent=2))   
+            # print(event)
+            detail = f"{event['actor']['login']} PEFORMED {event['type']} ON REPO {event['repo']['name']} DURING {event['created_at']};\n"
+            
+            details += detail
+        return details
+    else:    
+        return None

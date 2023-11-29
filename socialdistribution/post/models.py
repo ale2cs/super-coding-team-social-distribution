@@ -12,7 +12,7 @@ class Category(models.Model):
 class Post(models.Model):
     id = models.CharField(default=uuid.uuid4, editable=False, primary_key=True, max_length=200)
     title = models.CharField(max_length=200)
-    description = models.CharField(max_length=200)
+    description = models.CharField(max_length=10000)
     contentType = models.CharField(max_length=200)
     content = models.CharField(max_length=200)
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE, related_name="posts",default=None)

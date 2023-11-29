@@ -29,10 +29,15 @@ class RegisterUser(UserCreationForm):
                                  widget=forms.TextInput(attrs={'placeholder': 'Email',
                                                                 'class': 'form-control',
                                                                 }))
+    github = forms.URLField(required=False,
+                            widget=forms.URLInput(attrs={'placeholder': 'Github Link',
+                                                        'class': 'form-control'}),
+                            label='',
+                            )
     
     password1 = forms.CharField(max_length=100,
                                  required=True,
-                                 widget=forms.TextInput(attrs={'placeholder': 'Password',
+                                 widget=forms.PasswordInput(attrs={'placeholder': 'Password',
                                                                 'class': 'form-control',
                                                                 'data-toggle': 'password',
                                                                 'id': 'password',
@@ -40,7 +45,7 @@ class RegisterUser(UserCreationForm):
     
     password2 = forms.CharField(max_length=100,  # <--  this one can be removed if we don't want the functionality
                                  required=True,
-                                 widget=forms.TextInput(attrs={'placeholder': 'Confirm Password',
+                                 widget=forms.PasswordInput(attrs={'placeholder': 'Confirm Password',
                                                                 'class': 'form-control',
                                                                 'data-toggle': 'password',
                                                                 'id': 'password',
@@ -84,11 +89,16 @@ class UpdateUserForm(forms.ModelForm):
 
 class UpdateProfileForm(forms.ModelForm):
     avatar = forms.ImageField(widget=forms.FileInput(attrs={'class': 'form-control-file'}))
+    github = forms.URLField(required=False,
+                            widget=forms.URLInput(attrs={'placeholder': 'Github Link',
+                                                        'class': 'form-control'}),
+                            label='',
+                            )
     bio = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 5}))
 
     class Meta:
         model = Profile
-        fields = ['avatar', 'bio']
+        fields = ['avatar', 'github', 'bio']
 
 class SiteConfigurationForm(forms.ModelForm):
     class Meta: 
