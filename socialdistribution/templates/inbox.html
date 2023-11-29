@@ -44,8 +44,9 @@
 
     <div class="col-4">
         <h2>Friend Requests</h2>
-        {% if requests %}
+        {% if requests or not remote_requests.exists %}
             {% for request in requests %}
+                {% if request.status == 'pending' %}
                 <div class="alert alert-light" role="alert">
                     <strong>
                         <a href="{% url 'profile_detail' request.follower.user.id %}" class="link-primary">{{ request.follower.user.username }}</a> has sent a friend request!
@@ -60,6 +61,22 @@
                     </form>
                     <a href="{% url 'inbox_request' request.follower.user.id %}" class="btn btn-primary text-decoration-none">View Friend Status</a>
                 </div>
+                {% endif %}
+            {% endfor %}
+            {% for request in remote_requests %}
+                {% if request.status == 'pending' %}
+                <div class="alert alert-light" role="alert">
+                    <strong>{{request.summary}}</strong><br>
+                    <form method="POST" action="{% url 'respond_to_remote_follow_request' request.id 'accept' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">Accept</button>
+                    </form>
+                    <form method="POST" action="{% url 'respond_to_remote_follow_request' request.id 'decline' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Decline</button>
+                    </form>
+                </div>
+                {% endif %}
             {% endfor %}
         {% else %}
             <p>No Friend Requests</p>

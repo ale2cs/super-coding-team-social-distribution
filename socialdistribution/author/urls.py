@@ -11,5 +11,6 @@ urlpatterns = [
     path('social/<int:pk>', views.profile_detail, name='profile_detail'),
     path('social/follow/<str:node>/<path:remote_author>', views.send_remote_follow, name='send_remote_follow'),
     path('respond_to_follow_request/<int:friend_request_id>/<str:action>/', views.respond_to_follow_request, name='respond_to_follow_request'),
+    path('respond_to_remote_follow_request/<int:remote_friend_request_id>/<str:action>/', views.respond_to_remote_follow_request, name='respond_to_remote_follow_request'),
     path('social/unfollow/<str:node>/<path:remote_author>', views.send_remote_unfollow, name='send_remote_unfollow')
 ]
