@@ -1,4 +1,5 @@
 import base64
+from urllib.parse import SplitResult, urlsplit
 from drf_yasg import openapi
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -33,3 +34,8 @@ def validate_response(response):
     if response.status_code in [200, 201, 204]:
         return response.json()
     return {}
+
+def get_base_url(url):
+    parsed_url: SplitResult = urlsplit(url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    return base_url

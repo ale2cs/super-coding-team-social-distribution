@@ -17,6 +17,7 @@ class Profile(models.Model):
 class FollowerRemote(models.Model):
     following_author = models.ForeignKey(Profile, on_delete=models.CASCADE, default=None)
     remote_id = models.CharField(max_length=300, default=None)
+    url = models.CharField(max_length=200, default=None, null=True)
 
 class Follower(models.Model):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE, related_name='profile')
