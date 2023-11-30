@@ -387,7 +387,7 @@ class InboxAdd(APIView):
             local_author = Profile.objects.get(id=local_author_id)
             actor_name = request_data['actor']['displayName'] 
             local_author_name = request_data['object']['displayName']
-            desc = f"{actor_name} wants to follow {local_author_name}"
+            desc = request_data['summary']
             friend_request = RemoteFriendFollowRequest.objects.create(
                 summary = desc,
                 follower = remote_author_url,
