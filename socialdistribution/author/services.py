@@ -8,8 +8,8 @@ def get_authors_from_node(node):
                 headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
             )
         return validate_response(response)
-    except:
-        print(f"Error Connecting to node: {node.url}")
+    except Exception as e:
+        print(f"Error Connecting to node: {node.url} {e}")
         return {}
     
 
@@ -20,8 +20,8 @@ def get_author_from_node(node, url):
             headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
         )
         return validate_response(response)
-    except:
-        print(f"Error Connecting to node: {node.url}")
+    except Exception as e:
+        print(f"Error Connecting to node: {node.url} {e}")
         return {}
 
 def get_following_from_node(node, author_id, remote_author_id):
@@ -34,8 +34,8 @@ def get_following_from_node(node, author_id, remote_author_id):
         if isinstance(result, bool):
                         result = {'is_follower': result}
         return result
-    except:
-        print(f"Error Connecting to node: {node.url}")
+    except Exception as e:
+        print(f"Error Connecting to node: {node.url} {e}")
         return {}
 
 def post_following_to_node(node, remote_author_id, data):
@@ -46,6 +46,6 @@ def post_following_to_node(node, remote_author_id, data):
             json=data
         )
         return validate_response(response)
-    except:
-        print(f"Error Connecting to node: {node.url}")
+    except Exception as e:
+        print(f"Error Connecting to node {node.url}: {e}")
         return {}

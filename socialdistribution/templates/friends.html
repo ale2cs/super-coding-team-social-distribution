@@ -23,7 +23,32 @@
         </div>
     {% endfor %}
     </div>
+    {% else %}
+<p>No Friends :(</p>
+{% endif %}
+    {% if remote_profiles %}
+<br/>
+<div class="jumbotron text-center">
+    <h1 class="display-4 pt-2">Remote Friends</h1>
+    <p class="lead">
+        List of all your remote friends
+    </p>
+    <hr class="my-4">
+</div>
+{% for profile in remote_profiles %}
+    <br/>
+    <div class="card-group">
+        <div class="card p-3 m-3" style="min-width: 18rem; max-width: 18rem;">
+            <img class="card-img-top" src="{{profile.profileImage}}">
+            <div class="card-body">
+                <h5 class="card-title">{{profile.displayName}}</h5>
+                <p class="card-text">{{profile.bio}}</p>
+                <a href="{{profile.id}}" class="btn btn-secondary">Visit Profile</a>
+            </div>
+        </div>
+    </div>
+{% endfor %}
 {% else %}
-    <p>No Friends :(</p>
+<p>No Remote Friends :(</p>
 {% endif %}
 {% endblock content %}
