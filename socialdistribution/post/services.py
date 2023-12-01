@@ -18,6 +18,8 @@ def get_image_from_node(node, remote_post_id):
                 url=f"{remote_post_id}/image",
                 headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
             )
+        if response.status_code == 404:
+            return {'image': ''}
         return validate_response(response)
     except Exception as e:
         print(f"Error Connecting to node: {node.url} {e}")
