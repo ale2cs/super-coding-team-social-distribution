@@ -20,7 +20,7 @@ class CustomLoginView(LoginView):
     form_class = LoginUser
 
     def form_valid(self, form):
-        config = SiteConfiguration.objects.all()[:1].get()
+        config, created = SiteConfiguration.objects.get_or_create(pk=1)
         user_approval_required = config.user_approval_required
         if user_approval_required:
             if not self.request.user.is_authenticated:
