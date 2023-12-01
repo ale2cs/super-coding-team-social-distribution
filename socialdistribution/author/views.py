@@ -174,7 +174,7 @@ def send_remote_follow(request, remote_author, node):
 
     data = {
         'type': 'follow',
-        'summary': f'{user_profile} wants to follow',
+        'summary': f'{user_profile} wants to follow {remote_author_data["displayName"]}',
         'actor': serializer.data,
         'object': remote_author_data
     }

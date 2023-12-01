@@ -44,7 +44,7 @@
 
     <div class="col-4">
         <h2>Friend Requests</h2>
-        {% if requests or not remote_requests.exists %}
+        {% if requests or remote_requests.exists %}
             {% for request in requests %}
                 {% if request.status == 'pending' %}
                 <div class="alert alert-light" role="alert">
