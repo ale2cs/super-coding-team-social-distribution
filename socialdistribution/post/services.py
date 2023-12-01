@@ -1,6 +1,17 @@
 import requests
 from api.utils import create_basic_auth_header, validate_response
 
+def get_post_from_node(node, remote_author_id):
+    try:
+        response = requests.get(
+                url=f"{remote_author_id}",
+                headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
+            )
+        return validate_response(response)
+    except Exception as e:
+        print(f"Error Connecting to node: {node.url} {e}")
+        return {}
+    
 def get_posts_from_node(node, remote_author_id):
     try:
         response = requests.get(
