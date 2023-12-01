@@ -1,5 +1,6 @@
 import json, requests
 from api.models import Node
+from .utils import parse_iso8601_time  
 from . import services as postservices
 from author import services as authorservices
 from .models import Post, Like, Comment, CommentLike, RemoteLike, RemoteComment
@@ -29,6 +30,8 @@ def home_page(request):
             node_posts = []
             for index, remote_author in enumerate(node_authors):
                 node_post_data = postservices.get_posts_from_node(node, remote_author['id'])
+                if isinstance(node_post_data, dict) and node_post_data != {}:
+                    node_post_data = node_post_data['items']
                 for post in node_post_data:
                     if post['visibility'].lower() == 'public':
                         # get image
@@ -40,8 +43,8 @@ def home_page(request):
                         elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
                             node_images[post['id']] = node_image_data
 
-                        input_datetime = datetime.strptime(post['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
-                        post['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
+                        post['published'] = parse_iso8601_time(post['published'])
+                            
                         node_posts.append(post)
             node_posts.reverse()
             nodes_map[node] = node_posts
