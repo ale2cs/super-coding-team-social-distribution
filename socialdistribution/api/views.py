@@ -3,9 +3,12 @@ from django.db import IntegrityError
 from django.db.models import Q
 from rest_framework.views import APIView
 from author.models import Follower, FollowerRemote, Profile, RemoteFriendFollowRequest
-from post.models import Post, Like, Comment, CommentLike
+from post.models import Post, Like, Comment, CommentLike, RemoteComment, RemoteLike
 from inbox.models import Inbox, RemoteInbox
-from .serializers import ProfileSerializer, PostSerializer, LikeSerializer, CommentSerializer, FollowSerializer, InboxSerializer, CommentLikeSerializer, ImageSerializer
+from .serializers import (
+    ProfileSerializer, PostSerializer, LikeSerializer,CommentSerializer, 
+    CommentLikeSerializer, ImageSerializer, 
+    RemoteCommentSerializer, RemoteLikeSerializer)
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.paginator import Paginator
@@ -274,17 +277,33 @@ class Comments(APIView):
             size = DEFAULT_PAGE_SIZE
 
         post_id = kwargs['post_id']
-        post = Post.objects.get(id=post_id)
+        post = Post.objects.filter(id=post_id)
+        if len(post) == 0:
+            remote_comments = RemoteComment.objects.filter(post__contains=post_id)
+            if len(remote_comments) == 0:
+                return Response({'message': 'invalid post_id'}, status=404)  
+            remote_post = remote_comments[0].post
+            remote_comment_serializer = RemoteCommentSerializer(remote_comments, many=True, context={'request': request})
+            return Response({'type': 'comments', 'page': page, 'size': size, 
+                            'id': request.build_absolute_uri(), 
+                            'post': remote_post,
+                            'comments': remote_comment_serializer.data}
+                            , status=200)  
         comments = Comment.objects.filter(post_id=post_id)
-        paginator = Paginator(comments, per_page=size)
-        page_object = paginator.get_page(page)
-        comment_serializer = CommentSerializer(page_object, many=True, context={'request': request})
-        post_serializer = PostSerializer(post, context={'request': request})
-        post_link = post_serializer.data['id']
-        return Response({'type': 'comments', 'page': page, 'size': size, 
-                         'id': request.build_absolute_uri(), 
-                         'post': post_link, 'comments': comment_serializer.data}
-                         , status=200)
+        print(len(comments))
+        if len(comments) != 0:
+            paginator = Paginator(comments, per_page=size)
+            page_object = paginator.get_page(page)
+            comment_serializer = CommentSerializer(page_object, many=True, context={'request': request})
+            post_serializer = PostSerializer(post, context={'request': request})
+            post_link = post_serializer.data['id']
+            return Response({'type': 'comments', 'page': page, 'size': size, 
+                            'id': request.build_absolute_uri(), 
+                             'post': post_link, 
+                             'comments': comment_serializer.data}
+                            , status=200)  
+        return Response({'type': 'comments', 'page': page, 'size': size,
+                    'id': request.build_absolute_uri(), 'comments': comments}, status=200)
 
 class OneComment(APIView):
     @swagger_auto_schema(responses={200: CommentSerializer})
@@ -295,9 +314,17 @@ class OneComment(APIView):
         """
         post_id = kwargs['post_id']
         comment_id = kwargs['comment_id']
-        comment = Comment.objects.get(post_id=post_id, id=comment_id)
-        comment_serializer = CommentSerializer(comment, context={'request': request})
-        return Response(comment_serializer.data, status=200)
+        comments = Comment.objects.filter(post_id=post_id, id=comment_id)
+        if len(comments) != 0:
+            comment_serializer = CommentSerializer(comments[0], context={'request': request})
+            return Response(comment_serializer.data, status=200)
+        remote_comments = RemoteComment.objects.filter(post__contains=post_id, id=comment_id)
+        if len(remote_comments) != 0:
+            remote_comment_serializer = CommentSerializer(remote_comments[0], context={'request': request})
+            return Response(remote_comment_serializer.data, status=200) 
+        return Response({'message': 'invalid comment_id'})
+
+
 
 class LikesOnPost(APIView):
     @swagger_auto_schema(responses={200: CommentSerializer(many=True)})
@@ -307,8 +334,14 @@ class LikesOnPost(APIView):
         """
         post_id = kwargs['post_id']
         likes = Like.objects.filter(post_id=post_id)
-        serializer = LikeSerializer(likes, many=True, context={'request': request})
-        return Response(serializer.data, status=200)
+        if len(likes) != 0:
+            serializer = LikeSerializer(likes, many=True, context={'request': request})
+            return Response(serializer.data, status=200)
+        remote_likes = RemoteLike.objects.filter(post__contains=post_id)
+        if len(remote_likes) != 0:
+            serializer = RemoteLikeSerializer(remote_likes, many=True, context={'request': request})
+            return Response(serializer.data, status=200)
+        return Response({'message': 'invalid post_id'}, status=404)
 
 class LikesOnComment(APIView):
     def get(self, request, *args, **kwargs):
@@ -331,7 +364,10 @@ class LikedPosts(APIView):
         public_post_query = Q(post__visibility='public') & Q(post__unlisted=False)
         author_likes = Like.objects.filter(Q(author_id=author_id) & public_post_query)
         serializer = LikeSerializer(author_likes, many=True, context={'request': request})
-        return Response({'type': 'liked', 'items':serializer.data}, status=200)
+        remote_author_likes = RemoteLike.objects.filter(Q(author_id=author_id))
+        remote_serializer = RemoteLikeSerializer(remote_author_likes, many=True, context={'request': request})
+        all_likes = serializer.data + remote_serializer.data
+        return Response({'type': 'liked', 'items': all_likes}, status=200)
 
 class ImageView(APIView):
     def get(self, request, *args, **kwargs):

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.viewsets import ModelViewSet
 from django.http import HttpRequest
 from rest_framework.response import Response
-from post.models import Post, Like, Comment, CommentLike
+from post.models import Post, Like, Comment, CommentLike, RemoteComment, RemoteLike
 from author.models import Profile, Follower, FriendFollowRequest
 from inbox.models import Inbox
 
@@ -206,3 +206,50 @@ class InboxSerializer(serializers.ModelSerializer):
     class Meta:
         model = Inbox
         fields = '__all__'
+
+
+class RemoteCommentSerializer(serializers.ModelSerializer):
+    type = serializers.SerializerMethodField()
+    comment = serializers.CharField(source='content')
+
+    def get_type(self, instance):
+        return 'comment'
+
+    def to_representation(self, instance):
+        rep =  super().to_representation(instance)
+        request = self.context.get('request')
+        if request:
+            serializer = ProfileSerializer(instance.author, context={'request': request})
+            rep['author'] = serializer.data
+            post_id = instance.post.split('/')[6]
+            host = request.build_absolute_uri('/')[:-1]
+            rep['id'] = f"{host}/authors/{instance.author_id}/posts/{post_id}/comments/{instance.id}"
+        return rep
+
+    class Meta:
+        model = RemoteComment
+        fields = ['type', 'id', 'author', 'comment', 'contentType', 'published']
+
+class RemoteLikeSerializer(serializers.ModelSerializer):
+    type = serializers.SerializerMethodField()
+    object = serializers.SerializerMethodField()
+
+    def get_type(self, instance):
+        return 'like'
+
+    def get_object(self, instance):
+        return ''
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        request = self.context.get('request')
+        if request:
+            profile_serializer = ProfileSerializer(instance.author, context={'request': request})
+            rep['@context'] = 'https://www.w3.org/ns/activitystreams'
+            rep['author'] = profile_serializer.data
+            rep['object'] = instance.post
+        return rep
+
+    class Meta:
+        model = Like
+        fields = ['type', 'summary', 'author', 'object']
