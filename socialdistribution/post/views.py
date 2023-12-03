@@ -270,7 +270,7 @@ def view_remote_post(request, node, remote_post):
     # get remote comments and likes
     comments = []
     node_comments_data = postservices.get_comments_from_node(cur_node, post_details['id'])
-    if node_comments_data != {}:
+    if node_comments_data != {} and node_comments_data != []:
         for comment in node_comments_data['comments']:
             input_datetime = datetime.strptime(comment['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
             comment['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
