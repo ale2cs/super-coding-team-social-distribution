@@ -269,13 +269,17 @@ def view_remote_post(request, node, remote_post):
 
     # get remote comments and likes
     comments = []
+    comment_list = []
     node_comments_data = postservices.get_comments_from_node(cur_node, post_details['id'])
-    if node_comments_data != {}:
-        for comment in node_comments_data['comments']:
-            input_datetime = datetime.strptime(comment['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
-            comment['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
-            comments.append(comment)
-            comment_count += 1
+    if type(node_comments_data) == dict and node_comments_data != {}:
+        comment_list = node_comments_data['comments']
+    elif type(node_comments_data) == list:
+        comment_list = node_comments_data
+    for comment in comment_list:
+        input_datetime = datetime.strptime(comment['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        comment['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
+        comments.append(comment)
+        comment_count += 1
 
     node_likes_data = postservices.get_likes_from_node(cur_node, post_details['id'])
     likes += len(node_likes_data)
