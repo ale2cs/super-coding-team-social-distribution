@@ -35,6 +35,11 @@ class Post(models.Model):
         likes = Like.objects.filter(post=self)
         return len(likes)
 
+class RemotePost(models.Model):
+    post_id = models.CharField(max_length=300, default=None)
+
+
+
 class Like(models.Model):
     summary = models.CharField(max_length=200)
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)

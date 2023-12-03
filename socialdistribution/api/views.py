@@ -3,7 +3,7 @@ from django.db import IntegrityError
 from django.db.models import Q
 from rest_framework.views import APIView
 from author.models import Follower, FollowerRemote, Profile, RemoteFriendFollowRequest
-from post.models import Post, Like, Comment, CommentLike, RemoteComment, RemoteLike
+from post.models import Post, Like, Comment, CommentLike, RemoteComment, RemoteLike, RemotePost
 from inbox.models import Inbox, RemoteInbox
 from .serializers import (
     ProfileSerializer, PostSerializer, LikeSerializer,CommentSerializer, 
@@ -279,32 +279,27 @@ class Comments(APIView):
 
         post_id = kwargs['post_id']
         post = Post.objects.filter(id=post_id)
-        if len(post) == 0:
-            remote_comments = RemoteComment.objects.filter(post__contains=post_id)
-            if len(remote_comments) == 0:
-                return Response({'message': 'invalid post_id'}, status=404)  
-            remote_post = remote_comments[0].post
-            remote_comment_serializer = RemoteCommentSerializer(remote_comments, many=True, context={'request': request})
-            return Response({'type': 'comments', 'page': page, 'size': size, 
-                            'id': request.build_absolute_uri(), 
-                            'post': remote_post,
-                            'comments': remote_comment_serializer.data}
-                            , status=200)  
-        comments = Comment.objects.filter(post_id=post_id)
-        print(len(comments))
-        if len(comments) != 0:
-            paginator = Paginator(comments, per_page=size)
-            page_object = paginator.get_page(page)
-            comment_serializer = CommentSerializer(page_object, many=True, context={'request': request})
-            post_serializer = PostSerializer(post, context={'request': request})
-            post_link = post_serializer.data['id']
-            return Response({'type': 'comments', 'page': page, 'size': size, 
-                            'id': request.build_absolute_uri(), 
-                             'post': post_link, 
-                             'comments': comment_serializer.data}
-                            , status=200)  
-        return Response({'type': 'comments', 'page': page, 'size': size,
-                    'id': request.build_absolute_uri(), 'comments': comments}, status=200)
+
+        local_comments = Comment.objects.filter(post_id=post_id)
+        comment_serializer = CommentSerializer(local_comments, many=True, context={'request': request})
+
+        remote_comments = RemoteComment.objects.filter(post_id=post_id)
+        remote_comment_serializer = RemoteCommentSerializer(remote_comments, many=True, context={'request': request})
+
+        comments = comment_serializer.data + remote_comment_serializer.data
+        # no pagination for now
+        # paginator = Paginator(comments, per_page=size)
+        # page_object = paginator.get_page(page)
+
+
+        post_serializer = PostSerializer(post[0], context={'request': request})
+        post_link = post_serializer.data['id']
+        
+        return Response({'type': 'comments', 'page': page, 'size': size, 
+                        'id': request.build_absolute_uri(), 
+                            'post': post_link, 
+                            'comments': comments}
+                        , status=200)  
 
 class OneComment(APIView):
     @swagger_auto_schema(responses={200: CommentSerializer})
@@ -319,9 +314,9 @@ class OneComment(APIView):
         if len(comments) != 0:
             comment_serializer = CommentSerializer(comments[0], context={'request': request})
             return Response(comment_serializer.data, status=200)
-        remote_comments = RemoteComment.objects.filter(post__contains=post_id, id=comment_id)
+        remote_comments = RemoteComment.objects.filter(post_id=post_id, id=comment_id)
         if len(remote_comments) != 0:
-            remote_comment_serializer = CommentSerializer(remote_comments[0], context={'request': request})
+            remote_comment_serializer = RemoteCommentSerializer(remote_comments[0], context={'request': request})
             return Response(remote_comment_serializer.data, status=200) 
         return Response({'message': 'invalid comment_id'})
 
@@ -335,14 +330,11 @@ class LikesOnPost(APIView):
         """
         post_id = kwargs['post_id']
         likes = Like.objects.filter(post_id=post_id)
-        if len(likes) != 0:
-            serializer = LikeSerializer(likes, many=True, context={'request': request})
-            return Response(serializer.data, status=200)
-        remote_likes = RemoteLike.objects.filter(post__contains=post_id)
-        if len(remote_likes) != 0:
-            serializer = RemoteLikeSerializer(remote_likes, many=True, context={'request': request})
-            return Response(serializer.data, status=200)
-        return Response({'message': 'invalid post_id'}, status=404)
+        like_serializer = LikeSerializer(likes, many=True, context={'request': request})
+        remote_likes = RemoteLike.objects.filter(post_id=post_id)
+        remote_like_serializer = RemoteLikeSerializer(remote_likes, many=True, context={'request': request})
+        likes_on_post = like_serializer.data + remote_like_serializer.data
+        return Response(likes_on_post, status=200)
 
 class LikesOnComment(APIView):
     def get(self, request, *args, **kwargs):
@@ -365,10 +357,7 @@ class LikedPosts(APIView):
         public_post_query = Q(post__visibility='public') & Q(post__unlisted=False)
         author_likes = Like.objects.filter(Q(author_id=author_id) & public_post_query)
         serializer = LikeSerializer(author_likes, many=True, context={'request': request})
-        remote_author_likes = RemoteLike.objects.filter(Q(author_id=author_id))
-        remote_serializer = RemoteLikeSerializer(remote_author_likes, many=True, context={'request': request})
-        all_likes = serializer.data + remote_serializer.data
-        return Response({'type': 'liked', 'items': all_likes}, status=200)
+        return Response({'type': 'liked', 'items': serializer.data}, status=200)
 
 class ImageView(APIView):
     def get(self, request, *args, **kwargs):
@@ -414,7 +403,8 @@ class InboxAdd(APIView):
             return Response({'message': 'AUTHOR_ID does not exist'}, status=404)
         
         if type_value.lower() == 'post': 
-            inbox.items.append(request_data)
+            post = RemotePost.objects.create(id=request_data['id'])
+            inbox.posts.add(request_data)
             inbox.save()
             return Response(request_data, status=status.HTTP_200_OK)
 
@@ -435,13 +425,34 @@ class InboxAdd(APIView):
             return Response(request_data, status=status.HTTP_200_OK)
 
         elif type_value.lower() == 'comment':
-            inbox.items.append(request_data)
-            inbox.save()
-            return Response(request_data, status=status.HTTP_200_OK)
+            post_id = request_data['id'].split('/')[6]
+            try: 
+                post = Post.objects.get(id=post_id)
+                comment = RemoteComment.objects.create(
+                    content=request_data['comment'],
+                    author=request_data['author']['id'],
+                    post=post,
+                    contentType=request_data['contentType']
+                )
+                inbox.comments.add(comment)
+                inbox.save()
+                return Response(request_data, status=status.HTTP_200_OK)
+            except Post.DoesNotExist:
+                return Response({'message': 'invalid post'})
 
         elif type_value.lower() == 'like':
-            inbox.items.append(request_data)
-            inbox.save()
-            return Response(request_data, status=status.HTTP_200_OK)
+            try: 
+                post_id = request_data['object'].split('/')[6]
+                post = Post.objects.get(id=post_id)
+                like = RemoteLike.objects.create(
+                    summary=request_data['summary'],
+                    author=request_data['author']['id'],
+                    post=post
+                )
+                inbox.likes.add(like)
+                inbox.save()
+                return Response(request_data, status=status.HTTP_200_OK)
+            except Post.DoesNotExist:
+                return Response({'message': 'invalid post'})
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
