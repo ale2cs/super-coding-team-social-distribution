@@ -9,15 +9,23 @@
             <div class="col-1">
                 <!-- Only show follow button if not users profile -->
                 {% if user.profile != profile %}
-                <form method="POST">
-                    {% csrf_token %}
                     {% if profile in user_follow.following.all %}
-                    <button type="submit" name="follow" value="unfollow" class="btn btn-danger">Unfollow</button>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <button type="submit" name="follow" value="unfollow" class="btn btn-danger">Unfollow</button>
+                        </form>
                     {% else %}
-                    <button type="submit" name="follow" value="follow" class="btn btn-success">Follow</button>
+                        {% if pending %}
+                            <button class="btn btn-secondary">Pending</button>
+                        {% else %}
+                            <form method="POST">
+                                {% csrf_token %}
+                                <button type="submit" name="follow" value="follow" class="btn btn-success">Follow</button>
+                            </form>
+                        {% endif %}
                     {% endif %}
-                </form>
                 {% endif %}
+
             </div>
             <div class="col-3 offset-md-4">
                 <div class="card">

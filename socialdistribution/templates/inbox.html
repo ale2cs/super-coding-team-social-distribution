@@ -43,13 +43,13 @@
 
 
     <div class="col-4">
-        <h2>Friend Requests</h2>
+        <h2>Follow Requests</h2>
         {% if requests or remote_requests.exists %}
             {% for request in requests %}
                 {% if request.status == 'pending' %}
                 <div class="alert alert-light" role="alert">
                     <strong>
-                        <a href="{% url 'profile_detail' request.follower.user.id %}" class="link-primary">{{ request.follower.user.username }}</a> has sent a friend request!
+                        <a href="{% url 'profile_detail' request.follower.user.id %}" class="link-primary">{{ request.follower.user.username }}</a> has sent a follow request!
                     </strong><br>
                     <form method="POST" action="{% url 'respond_to_follow_request' request.id 'accept' %}" style="display: inline;">
                         {% csrf_token %}
