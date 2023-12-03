@@ -32,7 +32,6 @@ def get_comments_from_node(node, remote_post_id):
                 url=f"{remote_post_id}/comments",
                 headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
             )
-        print(response.json())
         return validate_response(response)
     except Exception as e:
         print(f"Error Connecting to node: {node.url} {e}")
