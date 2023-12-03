@@ -2,6 +2,7 @@ from django.shortcuts import render
 from author.models import Follower, Profile, FriendFollowRequest
 from inbox.models import Inbox, RemoteInbox
 from post.models import Post
+from api.services import get_author_from_link
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from urllib.parse import urlparse
@@ -33,15 +34,26 @@ def inbox_request(request, pk):
 @login_required
 def inbox(request):
     user_profile = request.user.profile
+
+    # remote
+    remote_inbox = RemoteInbox.objects.get(author=user_profile)
+    remote_likes = list(remote_inbox.likes.all())
+    remote_comments = list(remote_inbox.comments.all())
+    remote_posts = list(remote_inbox.comments.all())
+    remote_requests = (remote_inbox.requests.all())
+    for remote_comment in remote_comments:
+        remote_comment.author = get_author_from_link(remote_comment.author)['displayName']
+    for remote_post in remote_posts:
+        remote_post.author = get_author_from_link(remote_post.author)['displayName']
+
+    # local
     inbox = Inbox.objects.get(user=user_profile)
-    likes = list(inbox.get_likes())
-    comments = list(inbox.get_comments())
+    likes = list(inbox.get_likes()) + remote_likes
+    comments = list(inbox.get_comments()) + remote_comments
+    posts = list(inbox.get_posts()) + remote_posts
     follows = inbox.get_follows()
     requests = inbox.get_requests()
-    posts = inbox.get_posts()
     comment_likes = inbox.get_comment_likes()
-    remote_inbox = RemoteInbox.objects.get(author=user_profile)
-    remote_requests = (remote_inbox.requests.all())
     # remote_items = remote_inbox.items
 
     # if remote_items != None:
