@@ -8,7 +8,8 @@ from inbox.models import Inbox, RemoteInbox
 from .serializers import (
     ProfileSerializer, PostSerializer, LikeSerializer,CommentSerializer, 
     CommentLikeSerializer, ImageSerializer, 
-    RemoteCommentSerializer, RemoteLikeSerializer)
+    RemoteCommentSerializer, RemoteLikeSerializer
+)
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.paginator import Paginator
