@@ -57,51 +57,26 @@
 
                 <div class="container text-center">
                     <div class="row">
-                        <div class="col-6">
-                                <h3>Remote Comments</h3>
-                                {% if comments.0 %}
-                                    {% for comment in comments.0 %}
-                                        <div class="alert alert-light" role="alert">
-                                            <small class="text-muted">
-                                                {{ comment.author.displayName }} ({{ comment.published }})<br/>
-                                            </small>
-                        
-                                            {% if comment.contentType == "markdown" %}
-                                            {{ comment.comment | convert_markdown | safe}}
-                                            {% else %}
-                                            {{ comment.comment }}
-                                            {% endif %}
-                        
-                                            <br/>
-                                        </div><br/>
-                                    {% endfor %}
-                                {% else %}
-                                <p>No Remote Comments :(</p>
-                                {% endif %}
-                        </div>
-                        <div class="col-6">
-                            <h3>Local Comments</h3>
-                            {% if comments.1 %}
-                                {% for comment in comments.1 %}
-                                    <div class="alert alert-light" role="alert">
-                                        <small class="text-muted">
-                                            {{ comment.author.username }} ({{ comment.published }})<br/>
-                                        </small>
-                    
-                                        {% if comment.contentType == "markdown" %}
-                                        {{ comment.content | convert_markdown | safe}}
-                                        {% else %}
-                                        {{ comment.content }}
-                                        {% endif %}
-                    
-                                        <br/>
-                                    </div><br/>
-                                {% endfor %}
-                            {% else %}
-                            <p>No Local Comments :(</p>
-                            {% endif %}
-                        </div>
-
+                        <h3><br/>Remote Comments</h3>
+                        {% if comments %}
+                            {% for comment in comments %}
+                                <div class="alert alert-light" role="alert">
+                                    <small class="text-muted">
+                                        {{ comment.author.displayName }} ({{ comment.published }})<br/>
+                                    </small>
+                
+                                    {% if comment.contentType == "markdown" %}
+                                    {{ comment.comment | convert_markdown | safe}}
+                                    {% else %}
+                                    {{ comment.comment }}
+                                    {% endif %}
+                
+                                    <br/>
+                                </div><br/>
+                            {% endfor %}
+                        {% else %}
+                        <p>No Comments :(</p>
+                        {% endif %}
             </div>
 
 {% endblock content %}
