@@ -84,13 +84,13 @@ def send_comment_to_node(node, comment, remote_post, request):
             "published": comment.published,
             "id": remote_post
         }
-
         response = requests.post(
             url=f'{node.url}/authors/{remote_author_id}/inbox', 
             headers=create_basic_auth_header(node.outbound_username, node.outbound_password),
             json=json_data,
 
         )
+        print(response)
         return validate_response(response)
     except Exception as e:
         print(f"Error Connecting to node: {node.url} {e}")

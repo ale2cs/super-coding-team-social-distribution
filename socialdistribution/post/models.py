@@ -1,7 +1,10 @@
 import uuid
 import base64
+from itertools import chain
+from operator import attrgetter
 from django.db import models
 from django.utils import timezone
+from api.services import get_author_from_link
 
 # Create your models here.
 class Category(models.Model):
@@ -26,13 +29,22 @@ class Post(models.Model):
         as well as returns the number of comments on the post,
         """
         comments = Comment.objects.filter(post=self).order_by("-published")
-        return comments, len(comments)
+        remote_comments = RemoteComment.objects.filter(post=self)
+
+        # get author displayName from all remote comments
+        for remote_comment in remote_comments:
+            remote_comment.author = get_author_from_link(remote_comment.author)['displayName']
+
+        # Combine the two querysets
+        all_comments = sorted(chain(comments, remote_comments), key=attrgetter('published'), reverse=True)
+
+        return all_comments, len(all_comments)
     
     def get_likes(self):
         """
         Returns the number of likes on the post
         """
-        likes = Like.objects.filter(post=self)
+        likes = list(Like.objects.filter(post=self)) + list(RemoteLike.objects.filter(post=self))
         return len(likes)
 
 class RemotePost(models.Model):
@@ -78,6 +90,7 @@ class Comment(models.Model):
             return True
         return False
 
+
 class RemoteComment(models.Model):
     id = models.CharField(default=uuid.uuid4, editable=False, primary_key=True, max_length=200)
     content = models.TextField()
@@ -86,10 +99,35 @@ class RemoteComment(models.Model):
     published = models.DateTimeField(auto_now_add=True)
     contentType = models.CharField(max_length=200)
 
+    def get_likes(self):
+        """
+        Returns the number of likes on the comment
+        """
+
+        likes = RemoteCommentLike.objects.filter(comment=self)
+        return len(likes)
+    
+    def liked(self, liked_user):
+        """
+        Returns true if a comment is liked by liked_user
+        false otherwise
+        """
+
+        data = RemoteCommentLike.objects.filter(comment=self, author=liked_user)
+        if len(data) > 0:
+            return True
+        return False
+
 class CommentLike(models.Model):
     summary = models.CharField(max_length=200)
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
     comment = models.ForeignKey(Comment, blank=True, null=True, on_delete=models.CASCADE)
+
+class RemoteCommentLike(models.Model):
+    summary = models.CharField(max_length=200)
+    author = models.CharField(max_length=300)
+    comment = models.ForeignKey('RemoteComment', blank=True, null=True, on_delete=models.CASCADE)
+
 
 class Image(models.Model):
     upload = models.ImageField(upload_to='uploads/')

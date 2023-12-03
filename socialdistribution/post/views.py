@@ -12,6 +12,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import CreatePostForm, CreateCommentForm, CreateRemoteCommentForm
 from datetime import datetime
+from django.utils import timezone
 
 # Create your views here.
 @login_required
@@ -292,6 +293,7 @@ def view_remote_post(request, node, remote_post):
         elif action == "comment":
             # send comment to their inbox
             if form.is_valid():
+                form.instance.published = timezone.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
                 comment = form.save(commit=False)
                 postservices.send_comment_to_node(cur_node, comment, remote_post, request)
                 messages.success(request, ("Commented on post successfully!"))
