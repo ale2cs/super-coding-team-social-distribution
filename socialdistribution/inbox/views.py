@@ -2,11 +2,12 @@ from django.shortcuts import render
 from author.models import Follower, Profile, FriendFollowRequest
 from inbox.models import Inbox, RemoteInbox
 from post.models import Post
-from api.services import get_author_from_link
+from api.services import get_author_from_link, get_remote_node
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from urllib.parse import urlparse
 from author import services
+from datetime import datetime
 
 # Create your views here.
 @login_required
@@ -39,18 +40,24 @@ def inbox(request):
     remote_inbox = RemoteInbox.objects.get(author=user_profile)
     remote_likes = list(remote_inbox.likes.all())
     remote_comments = list(remote_inbox.comments.all())
-    remote_posts = list(remote_inbox.posts.all())
+    remote_posts_info = []
     remote_requests = (remote_inbox.requests.all())
     for remote_comment in remote_comments:
         remote_comment.author = get_author_from_link(remote_comment.author)['displayName']
-    #for remote_post in remote_posts:
-    #    remote_post.author = get_author_from_link(remote_post.author)['displayName']
+    for remote_post in remote_inbox.posts.all():
+        post = get_author_from_link(remote_post.post_id)
+        input_datetime = datetime.strptime(post['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        post['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
+        node = get_remote_node(remote_post.post_id)
+        remote_posts_info.append([post, node])
+        
+        #print(remote_post.post_id)
 
     # local
     inbox = Inbox.objects.get(user=user_profile)
     likes = list(inbox.get_likes()) + remote_likes
     comments = list(inbox.get_comments()) + remote_comments
-    posts = list(inbox.get_posts()) + remote_posts
+    posts = list(inbox.get_posts()) #+ remote_posts
     follows = inbox.get_follows()
     requests = inbox.get_requests()
     comment_likes = inbox.get_comment_likes()
@@ -77,6 +84,7 @@ def inbox(request):
         'follows':follows, 
         'requests':requests, 
         'posts':posts, 
+        'remote_posts_info':remote_posts_info,
         'comment_likes':comment_likes,
         'remote_requests':remote_requests,
     })

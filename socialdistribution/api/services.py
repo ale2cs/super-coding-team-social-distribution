@@ -15,3 +15,9 @@ def get_author_from_link(author_link):
     except Exception as e:
         print(f"Error Connecting to node: {node.url} {e}")
         return {}
+    
+def get_remote_node(link):
+    nodes = Node.objects.all()
+    for node in nodes:
+        if node.url in link:
+            return node

@@ -113,7 +113,15 @@
             {% if friends_remote %}
                 {% for friend in friends_remote %}
                     {% if post.author != friend %}
-                    <p>place holder</p>
+                    <div class="alert alert-light" role="alert">
+                        <strong>
+                            {{ friend.displayName }}
+                        </strong></br>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <button type="submit" name="action" value="share,{{friend.id}}" class="btn btn-primary text-decoration-none">Share</button>
+                        </form>
+                    </div>
                     {% endif %}
                 {% endfor %}
             {% else %}

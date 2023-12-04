@@ -39,7 +39,34 @@
                 {% endfor %}
             {% endif %}
 
+            {% if remote_posts_info %}
+                {% for info in remote_posts_info %}
+
+                <div class="alert alert-light" role="alert">
+                    <div class="position-absolute top-0 end-0">
+                        <form>
+                            {% csrf_token %}
+                            <a href="{% url 'view_remote_post' node=info.1.name remote_post=info.0.id%}" class="btn btn-success btn-outline-primary">View</a>
+                        </form>
+                    </div>
+                    <small class="text-muted">
+                        {{ info.0.author.displayName }} ({{ info.0.published }})<br/>
+                    </small>
+                    <strong>{{ info.0.title }}</strong><br/>
+                    {% if info.0.contentType == "markdown" %}
+                    {{ info.0.description | convert_markdown | safe}}
+                    {% else %}
+                    {{ info.0.description }}
+                    {% endif %}
+                </div><br/>
+                {% endfor %}
+
+
+            {% endif %}
+
         </div>
+
+
 
 
     <div class="col-4">

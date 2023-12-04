@@ -278,13 +278,12 @@ def view_remote_post(request, node, remote_post):
     for follow_obj in follow_remote:
         base_url = get_base_url(follow_obj.url)
         node = Node.objects.get(url=base_url)
-        is_remote_following = services.get_following_from_node(node, request.user.profile.id, follow_obj.url)
+        is_remote_following = authorservices.get_following_from_node(node, request.user.profile.id, follow_obj.url)
         if is_remote_following['is_follower']:
-            remote_author = services.get_author_from_node(node, follow_obj.url)
+            remote_author = authorservices.get_author_from_node(node, follow_obj.url)
             friends_remote.append(remote_author)
-
     # get the remote post
-    cur_node = Node.objects.get(name=node)
+    cur_node = Node.objects.get(name=node_name)
     post_details = ""
     node_image = ""
     node_authors_data = authorservices.get_authors_from_node(cur_node)
@@ -335,6 +334,10 @@ def view_remote_post(request, node, remote_post):
                 comment = form.save(commit=False)
                 postservices.send_comment_to_node(cur_node, comment, remote_post, request)
                 messages.success(request, ("Commented on post successfully!"))
+        elif "share" in action:
+            friend_id = action.split(",")[1]
+            postservices.send_remote_post_to_node(cur_node, remote_post, friend_id, request)
+            messages.success(request, "Shared Post sucessfully!")
         return redirect("home")
     return render(request, "view_remote_post.html", {'post_details':post_details, 'image':node_image, 'comments':comments, 'form': form, 'likes':likes, 'comment_count':comment_count, "friends_local":friends_local, "friends_remote":friends_remote, "node_name":node_name})
 
