@@ -150,7 +150,7 @@ class PostList(APIView):
         page_object = paginator.get_page(page)
         serializer = PostSerializer(page_object, many=True, context={'request': request})
         return Response(serializer.data, status=200)
-        
+    
     '''
     @swagger_auto_schema( request_body=PostSerializer)
     def post(self, request, *args, **kwargs):
@@ -166,6 +166,28 @@ class PostList(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     '''
+
+class AllPosts(APIView):
+    @swagger_auto_schema(responses={200: PostSerializer(many=True)})
+    def get(self, request, *args, **kwargs):
+        print(request)
+        """
+        Get all local posts
+        """
+        size = request.GET.get('size')
+        page = request.GET.get('page')
+
+        error_response, error_status = validate_paginator_parameters(size, page)
+        if error_response is not None:
+            return Response(error_response, status=error_status)
+
+        if not size:
+            size = DEFAULT_PAGE_SIZE
+        posts = Post.objects.filter(unlisted=False)
+        paginator = Paginator(posts, per_page=size)
+        page_object = paginator.get_page(page)
+        serializer = PostSerializer(page_object, many=True, context={'request': request})
+        return Response(serializer.data, status=200)
 
 class Followers(APIView):
     @swagger_auto_schema(responses={200: ProfileSerializer(many=True)})
