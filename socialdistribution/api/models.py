@@ -9,6 +9,7 @@ class Node(models.Model):
     outbound_username = models.CharField(max_length=200, null=True)
     outbound_password = models.CharField(max_length=200, null=True)
     use_authentication = models.BooleanField(default=False)
+    token = models.CharField(max_length=300, null=True, blank=True)
     
     def __str__(self):
         return str(self.url)
