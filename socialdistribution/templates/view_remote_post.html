@@ -87,9 +87,8 @@
             {% if post.unlisted %}
             <a href="{% url 'view_post' post.id %}" target="_blank">Copy this link to share to your friends!</a>
             {% endif %}
-            
+            <h5>Local Friends</h5>
             {% if friends_local %}
-                <h5>Local Friends</h5>
                 {% for friend in friends_local %}
                     {% if post.author != friend %}
                     <div class="alert alert-light" role="alert">

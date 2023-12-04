@@ -403,7 +403,7 @@ class InboxAdd(APIView):
             return Response({'message': 'AUTHOR_ID does not exist'}, status=404)
         
         if type_value.lower() == 'post': 
-            post = RemotePost.objects.create(id=request_data['id'])
+            post = RemotePost.objects.create(post_id=request_data['id'])
             inbox.posts.add(request_data)
             inbox.save()
             return Response(request_data, status=status.HTTP_200_OK)
