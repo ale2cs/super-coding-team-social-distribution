@@ -78,5 +78,49 @@
                         <p>No Comments :(</p>
                         {% endif %}
             </div>
+        </div>
+    </div>
+
+    <div class="col-2">
+        <h3>Share To</h3>
+        <div>
+            {% if post.unlisted %}
+            <a href="{% url 'view_post' post.id %}" target="_blank">Copy this link to share to your friends!</a>
+            {% endif %}
+            
+            {% if friends_local %}
+                <h5>Local Friends</h5>
+                {% for friend in friends_local %}
+                    {% if post.author != friend %}
+                    <div class="alert alert-light" role="alert">
+                        <strong>
+                            <a href="{% url 'profile_detail' friend.user.id %}" class="link-primary">{{ friend.user.username }}</a>
+                        </strong></br>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <a href="{% url 'share_remote_post' node=node_name remote_post=post_details.id friend_id=friend.user.id %}" class="btn btn-primary text-decoration-none">Share</a>
+                        </form>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+            <p>No local friend to share to</p>
+            {% endif %}
+        </div>
+
+        <h5>Remote Friends</h5>
+        <div>
+            {% if friends_remote %}
+                {% for friend in friends_remote %}
+                    {% if post.author != friend %}
+                    <p>place holder</p>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+            <p>No remote friend to share to</p>
+            {% endif %}
+        </div>
+
+    </div>
 
 {% endblock content %}

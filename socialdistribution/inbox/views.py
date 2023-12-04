@@ -39,12 +39,12 @@ def inbox(request):
     remote_inbox = RemoteInbox.objects.get(author=user_profile)
     remote_likes = list(remote_inbox.likes.all())
     remote_comments = list(remote_inbox.comments.all())
-    remote_posts = list(remote_inbox.comments.all())
+    remote_posts = list(remote_inbox.posts.all())
     remote_requests = (remote_inbox.requests.all())
     for remote_comment in remote_comments:
         remote_comment.author = get_author_from_link(remote_comment.author)['displayName']
-    for remote_post in remote_posts:
-        remote_post.author = get_author_from_link(remote_post.author)['displayName']
+    #for remote_post in remote_posts:
+    #    remote_post.author = get_author_from_link(remote_post.author)['displayName']
 
     # local
     inbox = Inbox.objects.get(user=user_profile)
