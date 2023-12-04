@@ -7,7 +7,7 @@ def get_posts_from_node(node, remote_author_id):
     try:
         response = requests.get(
                 url=f"{remote_author_id}/posts",
-                headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
+                headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token)
             )
         return validate_response(response)
     except Exception as e:
@@ -18,7 +18,7 @@ def get_image_from_node(node, remote_post_id):
     try:
         response = requests.get(
                 url=f"{remote_post_id}/image",
-                headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
+                headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token)
             )
         if response.status_code == 404:
             return {'image': ''}
@@ -31,7 +31,7 @@ def get_comments_from_node(node, remote_post_id):
     try:
         response = requests.get(
                 url=f"{remote_post_id}/comments",
-                headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
+                headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token)
             )
         return validate_response(response)
     except Exception as e:
@@ -42,7 +42,7 @@ def get_likes_from_node(node, remote_post_id):
     try:
         response = requests.get(
                 url=f"{remote_post_id}/likes",
-                headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
+                headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token)
             )
         return validate_response(response)
     except Exception as e:
@@ -63,7 +63,7 @@ def send_like_to_node(node, remote_post, request):
         }
         response = requests.post(
             url=f'{node.url}/authors/{remote_author_id}/inbox', 
-            headers=create_basic_auth_header(node.outbound_username, node.outbound_password),
+            headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token),
             json=json_data,
 
         )
@@ -87,7 +87,7 @@ def send_comment_to_node(node, comment, remote_post, request):
         }
         response = requests.post(
             url=f'{node.url}/authors/{remote_author_id}/inbox', 
-            headers=create_basic_auth_header(node.outbound_username, node.outbound_password),
+            headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token),
             json=json_data,
 
         )
