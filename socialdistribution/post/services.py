@@ -95,3 +95,26 @@ def send_comment_to_node(node, comment, remote_post, request):
     except Exception as e:
         print(f"Error Connecting to node: {node.url} {e}")
         return {}
+    
+def send_remote_post_to_node(node, remote_post_url, friend_id, request):
+    try:
+        # get remote post
+        response = requests.get(
+            url=remote_post_url,
+            headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
+        )
+        data = validate_response(response)
+        data['source'] = request.build_absolute_uri('/')
+
+        # send to inbox
+        remote_author_id = friend_id.split('/')[4]
+        response = requests.post(
+            url=f'{node.url}/authors/{remote_author_id}/inbox', 
+            headers=create_basic_auth_header(node.outbound_username, node.outbound_password),
+            json=data
+        )
+        print(data)
+        return validate_response(response)
+    except Exception as e:
+        print(f"Error Connecting to node: {node.url} {e}")
+        return {}

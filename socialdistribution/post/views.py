@@ -1,11 +1,13 @@
 import json, requests
+from api.utils import get_base_url
+from . import services
 from api.models import Node
 from .utils import parse_iso8601_time  
 from . import services as postservices
 from author import services as authorservices
-from .models import Post, Like, Comment, CommentLike, RemoteLike, RemoteComment
-from author.models import Follower, Profile
-from inbox.models import Inbox
+from .models import Post, Like, Comment, CommentLike, RemoteLike, RemoteComment, RemotePost
+from author.models import Follower, Profile, FollowerRemote
+from inbox.models import Inbox, RemoteInbox
 from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -240,13 +242,48 @@ def share_post(request, post_id, friend_id):
     return render(request, "share_post.html", {'shared_posts':inbox.get_posts(), 'post':post})
 
 @login_required
+def share_remote_post(request, node, remote_post, friend_id):
+    profile = Profile.objects.get(user_id=friend_id)
+    remote_inbox = RemoteInbox.objects.get(author=profile)
+    new_remote_post = RemotePost.objects.filter(post_id=remote_post)
+    if (len(new_remote_post) == 0):
+        new_remote_post = RemotePost(post_id=remote_post)
+        new_remote_post.save()
+    else:
+        new_remote_post = RemotePost.objects.get(post_id=remote_post)
+    print(list(remote_inbox.posts.all()))
+    print(new_remote_post)
+    if request.method == "POST":
+        action = request.POST['confirm']
+        if action == 'yes':
+            remote_inbox.posts.add(new_remote_post)
+            remote_inbox.save()
+            return redirect("view_remote_post", node, remote_post)
+    return render(request, "share_remote_post.html", {'post':new_remote_post, 'shared_posts':list(remote_inbox.posts.all()), 'node_name':node})
+
+
+@login_required
 def view_remote_post(request, node, remote_post):
 
     likes = 0
     comment_count = 0
+    node_name = node
+    # get local freinds
+    follow_local = Follower.objects.get(profile=request.user.profile)
+    friends_local = follow_local.get_friends()
 
+    # get remote friends
+    follow_remote = FollowerRemote.objects.filter(following_author=request.user.profile)
+    friends_remote = []
+    for follow_obj in follow_remote:
+        base_url = get_base_url(follow_obj.url)
+        node = Node.objects.get(url=base_url)
+        is_remote_following = authorservices.get_following_from_node(node, request.user.profile.id, follow_obj.url)
+        if is_remote_following['is_follower']:
+            remote_author = authorservices.get_author_from_node(node, follow_obj.url)
+            friends_remote.append(remote_author)
     # get the remote post
-    cur_node = Node.objects.get(name=node)
+    cur_node = Node.objects.get(name=node_name)
     post_details = ""
     node_image = ""
     node_authors_data = authorservices.get_authors_from_node(cur_node)
@@ -301,8 +338,12 @@ def view_remote_post(request, node, remote_post):
                 comment = form.save(commit=False)
                 postservices.send_comment_to_node(cur_node, comment, remote_post, request)
                 messages.success(request, ("Commented on post successfully!"))
+        elif "share" in action:
+            friend_id = action.split(",")[1]
+            postservices.send_remote_post_to_node(cur_node, remote_post, friend_id, request)
+            messages.success(request, "Shared Post sucessfully!")
         return redirect("home")
-    return render(request, "view_remote_post.html", {'post_details':post_details, 'image':node_image, 'comments':comments, 'form': form, 'likes':likes, 'comment_count':comment_count})
+    return render(request, "view_remote_post.html", {'post_details':post_details, 'image':node_image, 'comments':comments, 'form': form, 'likes':likes, 'comment_count':comment_count, "friends_local":friends_local, "friends_remote":friends_remote, "node_name":node_name})
 
 def load_github(user : Profile):
     """
