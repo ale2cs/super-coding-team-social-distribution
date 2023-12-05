@@ -179,7 +179,7 @@ def send_remote_follow(request, remote_author, node):
     author_node = Node.objects.get(name=node)
     user_profile = request.user.profile
     serializer = ProfileSerializer(user_profile, context={'request':request})
-    remote_author_data = services.get_author_from_node(node, remote_author)
+    remote_author_data = services.get_author_from_node(author_node, remote_author)
     if node == 'A-Team':
         data = {
             'actor': serializer.data['id'],
