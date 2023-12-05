@@ -2,7 +2,7 @@ import json, requests
 from api.utils import get_base_url
 from . import services
 from api.models import Node
-from api.services import get_author_from_link
+from api.services import get_remote_node
 from .utils import parse_iso8601_time  
 from . import services as postservices
 from author import services as authorservices
@@ -90,6 +90,30 @@ def home_page(request):
                         for friend in follow.get_friends():
                             inbox = Inbox.objects.get(user=friend)
                             inbox.posts.add(post)
+
+                    # send posts to remote followers and friends
+                    if post.visibility == "public": 
+                        follow_remote = FollowerRemote.objects.filter(following_author=request.user.profile)
+                        for follow_obj in follow_remote:
+                            node = get_remote_node(follow_obj.url)
+                            if node.name == 'A-Team':
+                                # TODO
+                                print('IS A-TEAM')
+                                continue
+                            postservices.send_local_post_to_node(post, follow_obj.url, request) 
+                            print('SENT POST')
+                    elif post.visibility == "friends": 
+                        follow_remote = FollowerRemote.objects.filter(following_author=request.user.profile)
+                        for follow_obj in follow_remote:
+                            base_url = get_base_url(follow_obj.url)
+                            node = Node.objects.get(url=base_url)
+                            is_remote_following = services.get_following_from_node(node, request.user.profile.id, follow_obj.url)
+                            if is_remote_following['is_follower']:
+                                if node.name == 'A-Team':
+                                    # TODO
+                                    continue
+                                postservices.send_local_post_to_node(post, follow_obj.url, request) 
+
                     return redirect('home')
             elif action == "load_github":
                 #print('loading github...')

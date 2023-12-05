@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from urllib.parse import urlparse
 from author import services
 from datetime import datetime
+from post.utils import parse_iso8601_time
 
 # Create your views here.
 @login_required
@@ -46,8 +47,7 @@ def inbox(request):
         remote_comment.author = get_author_from_link(remote_comment.author)['displayName']
     for remote_post in remote_inbox.posts.all():
         post = get_author_from_link(remote_post.post_id)
-        input_datetime = datetime.strptime(post['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
-        post['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
+        post['published'] = parse_iso8601_time(post['published'])
         node = get_remote_node(remote_post.post_id)
         remote_posts_info.append([post, node])
         
