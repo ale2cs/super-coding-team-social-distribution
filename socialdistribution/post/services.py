@@ -7,7 +7,7 @@ def get_post_from_node(node, remote_post_id):
     try:
         response = requests.get(
                 url=f"{remote_post_id}",
-                headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
+                headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token)
             )
         return validate_response(response)
     except Exception as e:
