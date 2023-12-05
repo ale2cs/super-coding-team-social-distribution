@@ -170,7 +170,6 @@ def friends_list(request):
         is_remote_following = services.get_following_from_node(node, request.user.profile.id, follow_obj.url)
         if is_remote_following['is_follower']:
             remote_author = services.get_author_from_node(node, follow_obj.url)
-            print(remote_author)
             remote_profiles.append(remote_author)
 
     return render(request, 'friends.html', {'profiles':profiles, 'remote_profiles': remote_profiles})
