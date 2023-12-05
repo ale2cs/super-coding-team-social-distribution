@@ -7,6 +7,8 @@ def get_author_from_link(author_link):
         nodes = Node.objects.all()
         for node in nodes:
             if node.url in author_link:
+                if node.name == 'A-Team':
+                    author_link = author_link + '/'
                 response = requests.get(
                         url=author_link,
                         headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token)

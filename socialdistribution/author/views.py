@@ -109,11 +109,17 @@ def profile_list(request):
             node_authors_data = services.get_authors_from_node(node)
             if node_authors_data == {}:
                 continue
+
             if node.name == 'A-Team':
                 node_authors = node_authors_data['results']['items']
             else:
                 node_authors = node_authors_data['items']
+
             for index, remote_author in enumerate(node_authors):
+                if node.name == 'A-Team':
+                    # changing fields
+                    remote_author['id'] = remote_author['url']
+                    remote_author['profileImage'] = remote_author['profilePicture']
                 following_data = services.get_following_from_node(node, request.user.profile.id, remote_author['id'])
                 remote_author.update(following_data)
                 node_authors[index] = remote_author
@@ -174,10 +180,10 @@ def send_remote_follow(request, remote_author, node):
     user_profile = request.user.profile
     serializer = ProfileSerializer(user_profile, context={'request':request})
     remote_author_data = services.get_author_from_node(author_node, remote_author)
-    if node.name == 'A-Team':
+    if author_node.name == 'A-Team':
         data = {
             'actor': serializer.data['id'],
-            'ojbect': serializer.data['id'],
+            'ojbect': remote_author,
         }
     else:
         data = {
