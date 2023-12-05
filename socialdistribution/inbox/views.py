@@ -42,22 +42,22 @@ def inbox(request):
     comment_likes = inbox.get_comment_likes()
     remote_inbox = RemoteInbox.objects.get(author=user_profile)
     remote_requests = (remote_inbox.requests.all())
-    remote_items = remote_inbox.items
+    # remote_items = remote_inbox.items
 
-    if remote_items != None:
-        for item in remote_items:
-            if item['type'].lower() == 'like':
-                item['post'] = {}
-                item['post']['id']= item['object'].split('/')[-1]
-                likes.append(item)
-            elif item['type'].lower() == 'comment':
-                url_parts = item['id'].split('/')
-                item['post'] = {}
-                item['post']['id'] = url_parts[url_parts.index('posts') + 1]
-                item['author'] = item['author']['displayName']
-                comments.append(item)
-            elif item['type'].lower() == 'post':
-                posts.append(item)
+    # if remote_items != None:
+    #     for item in remote_items:
+    #         if item['type'].lower() == 'like':
+    #             item['post'] = {}
+    #             item['post']['id']= item['object'].split('/')[-1]
+    #             likes.append(item)
+    #         elif item['type'].lower() == 'comment':
+    #             url_parts = item['id'].split('/')
+    #             item['post'] = {}
+    #             item['post']['id'] = url_parts[url_parts.index('posts') + 1]
+    #             item['author'] = item['author']['displayName']
+    #             comments.append(item)
+    #         elif item['type'].lower() == 'post':
+    #             posts.append(item)
                 
     return render(request, 'inbox.html', {
         'likes':likes, 

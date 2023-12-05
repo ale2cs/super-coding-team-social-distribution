@@ -20,7 +20,7 @@ class CustomLoginView(LoginView):
     form_class = LoginUser
 
     def form_valid(self, form):
-        config = SiteConfiguration.objects.all()[:1].get()
+        config, created = SiteConfiguration.objects.get_or_create(pk=1)
         user_approval_required = config.user_approval_required
         if user_approval_required:
             if not self.request.user.is_authenticated:
@@ -126,27 +126,27 @@ def profile_detail(request, pk):
         profile = Profile.objects.get(user_id=pk)
         follow = Follower.objects.get(profile=profile)
         user_profile = request.user.profile
-        inbox = Inbox.objects.get(user=user_profile)
         user_follow = Follower.objects.get(profile=user_profile)
-        other_inbox = Inbox.objects.get(user=profile)    
+        other_inbox = Inbox.objects.get(user=profile)
+        pending = False
 
         # Post form logic
         if request.method == "POST":
             action = request.POST['follow']
             if action == "unfollow":
-                user_follow.following.remove(profile)
-                inbox.follows.remove(profile)
-                friend_request = FriendFollowRequest.objects.filter(follower=user_profile, followee=profile).delete()
+                print("NOT IMPLEMENTED. FRIENDS FOREVER :D")
             elif action == "follow":
-                user_follow.following.add(profile)
-                inbox.follows.add(profile)
-                req_summary = request.user.username + " has requested to follow you!"
-                friend_request = FriendFollowRequest(summary=req_summary, follower=user_profile, followee=profile)
-                friend_request.save()
-                other_inbox.requests.add(friend_request)
-            user_follow.save()
+                # Check if a follow request already exists
+                existing_request = FriendFollowRequest.objects.filter(follower=request.user.profile, followee=profile, status='pending').first()
 
-        return render(request, 'other_profiles.html', {'profile':profile, 'follow':follow, 'user_follow':user_follow})
+                if not existing_request:
+                    req_summary = request.user.username + " has requested to follow you!"
+                    friend_request = FriendFollowRequest(summary=req_summary, follower=user_profile, followee=profile)
+                    friend_request.save()
+                    other_inbox.requests.add(friend_request)
+                    pending = True
+
+        return render(request, 'other_profiles.html', {'profile':profile, 'follow':follow, 'user_follow':user_follow, 'pending':pending})
         
 @login_required
 def friends_list(request):
@@ -193,15 +193,15 @@ def respond_to_follow_request(request, friend_request_id, action):
     
     if friend_request.followee == request.user.profile:
         if action == 'accept':
-            user_follower = Follower.objects.get(profile=request.user.profile)
             user_followee = Follower.objects.get(profile=friend_request.follower)
-            user_follower.following.add(request.user.profile)
-            user_followee.following.add(friend_request.follower)
+            user_followee.following.add(request.user.profile)
             friend_request.status = 'accepted'
             friend_request.save()
+            FriendFollowRequest.objects.filter(follower=friend_request.follower, followee=request.user.profile).delete()
         elif action == 'decline':
             friend_request.status = 'declined'
             friend_request.save()
+            FriendFollowRequest.objects.filter(follower=friend_request.follower, followee=request.user.profile).delete()
     
     return redirect('social')
 

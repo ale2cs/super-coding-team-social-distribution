@@ -4,9 +4,6 @@ from django.db import models
 from django.utils import timezone
 
 # Create your models here.
-class Comment:
-    pass
-
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
 class Post(models.Model):
@@ -38,6 +35,11 @@ class Post(models.Model):
         likes = Like.objects.filter(post=self)
         return len(likes)
 
+class RemotePost(models.Model):
+    post_id = models.CharField(max_length=300, default=None)
+
+
+
 class Like(models.Model):
     summary = models.CharField(max_length=200)
     author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
@@ -45,8 +47,8 @@ class Like(models.Model):
 
 class RemoteLike(models.Model):
     summary = models.CharField(max_length=200)
-    author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
-    post = models.CharField(max_length=200)
+    author = models.CharField(max_length=200)
+    post = models.ForeignKey('Post', on_delete=models.CASCADE)
 
 
 class Comment(models.Model):
@@ -79,8 +81,8 @@ class Comment(models.Model):
 class RemoteComment(models.Model):
     id = models.CharField(default=uuid.uuid4, editable=False, primary_key=True, max_length=200)
     content = models.TextField()
-    author = models.ForeignKey('author.Profile', on_delete=models.CASCADE)
-    post = models.CharField(max_length=200)
+    author = models.CharField(max_length=200)
+    post = models.ForeignKey('Post', on_delete=models.CASCADE)
     published = models.DateTimeField(auto_now_add=True)
     contentType = models.CharField(max_length=200)
 

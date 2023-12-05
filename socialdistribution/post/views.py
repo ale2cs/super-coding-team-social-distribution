@@ -243,7 +243,6 @@ def view_remote_post(request, node, remote_post):
 
     likes = 0
     comment_count = 0
-    comments = []
 
     # get the remote post
     cur_node = Node.objects.get(name=node)
@@ -261,55 +260,35 @@ def view_remote_post(request, node, remote_post):
     post_details = post
     
     # get remote comments and likes
-    remote_comments = []
+    comments = []
     node_comments_data = postservices.get_comments_from_node(cur_node, post_details['id'])
     if isinstance(node_comments_data, dict) and node_comments_data != {}:
         for comment in node_comments_data['comments']:
             comment['published'] = parse_iso8601_time(comment['published'])
-            remote_comments.append(comment)
+            comments.append(comment)
             comment_count += 1
-    comments.append(remote_comments)
 
     node_likes_data = postservices.get_likes_from_node(cur_node, post_details['id'])
     likes += len(node_likes_data)
-
-    # get local like/unlike button for post
-    current_user = request.user.profile
-    liked = True
-    data = RemoteLike.objects.filter(post=remote_post, author=current_user)
-    if len(data) > 0:
-        liked = True
-    else:
-        liked = False
-    
-    # retrieve local comments and likes
-    local_likes = RemoteLike.objects.all().filter(post=remote_post)
-    likes += len(local_likes)
-    local_comments = RemoteComment.objects.all().filter(post=remote_post)
-    comments += [local_comments]
-    comment_count += len(local_comments)
 
     # create local comments and likes
     form = CreateRemoteCommentForm(request.POST or None)
     if request.method == "POST":
         action = request.POST['action']
         if action == "like":
-            likeSummary = current_user.user.username + " liked your post!"
-            like = RemoteLike(summary=likeSummary,author=current_user, post=remote_post) 
-            like.save()
+            # send like to their inbox
+            postservices.send_like_to_node(cur_node, remote_post, request)    
             messages.success(request, ("Post Liked successfully!"))
-        elif action == "unlike":
-            like = RemoteLike.objects.filter(post=remote_post, author=current_user).delete()
+        elif action == "unlike": 
             messages.success(request, ("Post unliked successfully!"))
         elif action == "comment":
+            # send comment to their inbox
             if form.is_valid():
                 comment = form.save(commit=False)
-                comment.author = request.user.profile
-                comment.post = remote_post
-                comment.save()
+                postservices.send_comment_to_node(cur_node, comment, remote_post, request)
                 messages.success(request, ("Commented on post successfully!"))
         return redirect("home")
-    return render(request, "view_remote_post.html", {'post_details':post_details, 'image':node_image, 'comments':comments, 'form':form, 'liked':liked, 'likes':likes, 'comment_count':comment_count})
+    return render(request, "view_remote_post.html", {'post_details':post_details, 'image':node_image, 'comments':comments, 'form': form, 'likes':likes, 'comment_count':comment_count})
 
 def load_github(user : Profile):
     """
