@@ -3,6 +3,17 @@ from api.utils import create_basic_auth_header, validate_response
 from api.serializers import ProfileSerializer, PostSerializer
 from api.services import get_remote_node
 
+def get_post_from_node(node, remote_post_id):
+    try:
+        response = requests.get(
+                url=f"{remote_post_id}",
+                headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token)
+            )
+        return validate_response(response)
+    except Exception as e:
+        print(f"Error Connecting to node: {node.url} {e}")
+        return {}
+    
 def get_posts_from_node(node, remote_author_id):
     try:
         response = requests.get(

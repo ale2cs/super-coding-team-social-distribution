@@ -307,35 +307,28 @@ def view_remote_post(request, node, remote_post):
     cur_node = Node.objects.get(name=node_name)
     post_details = ""
     node_image = ""
-    node_authors_data = authorservices.get_authors_from_node(cur_node)
-    if node_authors_data != {}:
-        node_authors = node_authors_data['items']
-        for index, remote_author in enumerate(node_authors):
-            node_post_data = postservices.get_posts_from_node(cur_node, remote_author['id'])
-            for post in node_post_data:
-                if str(post['id']) == remote_post:
-                    node_image_data = postservices.get_image_from_node(cur_node, post['id'])
-                    if node_image_data == {}:
-                        continue
-                    elif type(node_image_data) == dict and node_image_data['image'] != "":  # our format
-                        node_image = node_image_data['image']
-                    elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
-                        node_image = node_image_data
-                    input_datetime = datetime.strptime(post['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
-                    post['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
-                    post_details = post
-
+    
+    post = postservices.get_post_from_node(cur_node, remote_post)
+    node_image_data = postservices.get_image_from_node(cur_node, remote_post)
+    if type(node_image_data) == dict and node_image_data['image'] != "":  # our format
+        node_image = node_image_data['image']
+    elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
+        node_image = node_image_data
+    post['published'] = parse_iso8601_time(post['published'])
+    
+    post_details = post
+    
     # get remote comments and likes
     comments = []
     comment_list = []
     node_comments_data = postservices.get_comments_from_node(cur_node, post_details['id'])
+
     if type(node_comments_data) == dict and node_comments_data != {}:
         comment_list = node_comments_data['comments']
     elif type(node_comments_data) == list:
         comment_list = node_comments_data
     for comment in comment_list:
-        input_datetime = datetime.strptime(comment['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
-        comment['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
+        comment['published'] = parse_iso8601_time(comment['published'])
         comments.append(comment)
         comment_count += 1
 
