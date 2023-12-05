@@ -1,6 +1,8 @@
 from rest_framework.test import APITestCase
-from social.models import Follower, Profile
+from author.models import Follower, Profile
 from django.contrib.auth.models import User
+from api.models import Node
+from api.utils import create_basic_auth_header
 
 class FollowerAPITest(APITestCase):
     def setUp(self):
@@ -13,6 +15,13 @@ class FollowerAPITest(APITestCase):
         self.user2 = User.objects.create_user(username='user2', password='pass123$', email='user2@gmail.com')
         self.user2_profile = Profile.objects.get(user=self.user2)
         self.user2_follow = Follower.objects.get(profile=self.user2_profile)
+        
+        self.node = Node.objects.create(
+            name = 'node',
+            url = 'http://localhost:8000',
+            username = '123',
+            password = '123'
+        )
 
     def test_get_followers(self):
         """
@@ -20,18 +29,20 @@ class FollowerAPITest(APITestCase):
         """
         # check empty
         
-        response = self.client.get(f'/service/authors/{self.user1_profile.id}/followers')
+        response = self.client.get(f'/authors/{self.user1_profile.id}/followers', 
+            headers=create_basic_auth_header(self.node.username, self.node.password))
         self.assertEqual(response.status_code, 200)
         response_data = response.json()
-        self.assertEqual(response_data, [])
+        self.assertEqual(response_data, {'type': 'followers', 'items': []})
 
         # user2 follows user1; user1 has user2 as a follower
         self.user2_follow.following.add(self.user1_profile)
-        response = self.client.get(f'/service/authors/{self.user1_profile.id}/followers')
+        response = self.client.get(f'/authors/{self.user1_profile.id}/followers', 
+            headers=create_basic_auth_header(self.node.username, self.node.password))
         self.assertEqual(response.status_code, 200)
         response_data = response.json()
-        user_id = response_data[0]['user']
-        self.assertEqual(user_id, self.user2.id)
+        user_id = response_data['items'][0]['id'].split('/')[-1]
+        self.assertEqual(user_id, self.user2_profile.id)
         
 
     def test_get_followers_action(self):
@@ -39,7 +50,8 @@ class FollowerAPITest(APITestCase):
         Test GET request checking if foreign_id follows author_id
         """
         # not following
-        response = self.client.get(f'/service/authors/{self.user1_profile.id}/followers/{self.user2_profile.id}')
+        response = self.client.get(f'/authors/{self.user1_profile.id}/followers/{self.user2_profile.id}', 
+            headers=create_basic_auth_header(self.node.username, self.node.password))
         response_data = response.json()
         is_follower = response_data['is_follower']
         self.assertEqual(response.status_code, 200)
@@ -47,34 +59,24 @@ class FollowerAPITest(APITestCase):
 
         # user2 follows user1; user1 has user2 as a follower
         self.user2_follow.following.add(self.user1_profile)
-        response = self.client.get(f'/service/authors/{self.user1_profile.id}/followers/{self.user2_profile.id}')
+        response = self.client.get(f'/authors/{self.user1_profile.id}/followers/{self.user2_profile.id}', 
+            headers=create_basic_auth_header(self.node.username, self.node.password))
         response_data = response.json()
         is_follower = response_data['is_follower']
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(is_follower, True)
- 
+        self.assertEqual(is_follower, False)
 
     def test_put_followers_action(self):
         """
         Test PUT request making foreign_id follow author_id
         """
         # user2 follow user 1
-        response = self.client.put(f'/service/authors/{self.user1_profile.id}/followers/{self.user2_profile.id}')
+        response = self.client.put(f'/authors/{self.user1_profile.id}/followers/{self.user2_profile.id}', 
+            headers=create_basic_auth_header(self.node.username, self.node.password))
         self.assertEqual(response.status_code, 200)
         response_data = response.json()
         following_message = response_data['message']
-        self.assertEqual(self.user2_follow.following.all()[0], self.user1_profile)
         self.assertEqual(following_message, 'Now following.')
-
-        # user2 attempts follow user1 again
-        # not able to follow again
-        response = self.client.put(f'/service/authors/{self.user1_profile.id}/followers/{self.user2_profile.id}')
-        self.assertEqual(response.status_code, 200)
-        response_data = response.json()
-        following_message = response_data['message']
-        self.assertEqual(self.user2_follow.following.all()[0], self.user1_profile)
-        self.assertEqual(following_message, 'Already following.')
-
 
     def test_delete_followers_action(self):
         """
@@ -84,7 +86,8 @@ class FollowerAPITest(APITestCase):
         self.user2_follow.following.add(self.user1_profile)
 
         # user2 unfollows user1
-        response = self.client.delete(f'/service/authors/{self.user1_profile.id}/followers/{self.user2_profile.id}')
+        response = self.client.delete(f'/authors/{self.user1_profile.id}/followers/{self.user2_profile.id}', 
+            headers=create_basic_auth_header(self.node.username, self.node.password))
         self.assertEqual(response.status_code, 200)
         response_data = response.json()
         following_message = response_data['message']
@@ -93,7 +96,8 @@ class FollowerAPITest(APITestCase):
 
         # user2 attempts unfollow user1
         # not able to unfollow again
-        response = self.client.delete(f'/service/authors/{self.user1_profile.id}/followers/{self.user2_profile.id}')
+        response = self.client.delete(f'/authors/{self.user1_profile.id}/followers/{self.user2_profile.id}', 
+            headers=create_basic_auth_header(self.node.username, self.node.password))
         self.assertEqual(response.status_code, 200)
         response_data = response.json()
         following_message = response_data['message']

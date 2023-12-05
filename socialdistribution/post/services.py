@@ -1,7 +1,19 @@
 import requests
 from api.utils import create_basic_auth_header, validate_response
-from api.serializers import ProfileSerializer
+from api.serializers import ProfileSerializer, PostSerializer
+from api.services import get_remote_node
 
+def get_post_from_node(node, remote_post_id):
+    try:
+        response = requests.get(
+                url=f"{remote_post_id}",
+                headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token)
+            )
+        return validate_response(response)
+    except Exception as e:
+        print(f"Error Connecting to node: {node.url} {e}")
+        return {}
+    
 def get_posts_from_node(node, remote_author_id):
     try:
         url = f"{remote_author_id}/posts"
@@ -93,7 +105,47 @@ def send_comment_to_node(node, comment, remote_post, request):
             json=json_data,
 
         )
-        print(response)
+        #print(response)
+        return validate_response(response)
+    except Exception as e:
+        print(f"Error Connecting to node: {node.url} {e}")
+        return {}
+    
+def send_remote_post_to_node(node, remote_post_url, friend_id, request):
+    try:
+        # get remote post
+        response = requests.get(
+            url=remote_post_url,
+            headers=create_basic_auth_header(node.outbound_username, node.outbound_password)
+        )
+        data = validate_response(response)
+        data['source'] = request.build_absolute_uri('/')
+
+        # send to inbox
+        remote_author_id = friend_id.split('/')[4]
+        response = requests.post(
+            url=f'{node.url}/authors/{remote_author_id}/inbox', 
+            headers=create_basic_auth_header(node.outbound_username, node.outbound_password),
+            json=data
+        )
+        return validate_response(response)
+    except Exception as e:
+        print(f"Error Connecting to node: {node.url} {e}")
+        return {}
+    
+def send_local_post_to_node(local_post, friend_id, request):
+    try:
+        # serialize local post
+        serializer = PostSerializer(local_post, context={'request': request})
+        node = get_remote_node(friend_id)
+
+        # send to inbox
+        remote_author_id = friend_id.split('/')[4]
+        response = requests.post(
+            url=f'{node.url}/authors/{remote_author_id}/inbox', 
+            headers=create_basic_auth_header(node.outbound_username, node.outbound_password),
+            json=serializer.data
+        )
         return validate_response(response)
     except Exception as e:
         print(f"Error Connecting to node: {node.url} {e}")

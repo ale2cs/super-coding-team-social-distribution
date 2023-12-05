@@ -1,12 +1,14 @@
 import json, requests
+from api.utils import get_base_url
+from . import services
 from api.models import Node
 from api.services import get_author_from_link
 from .utils import parse_iso8601_time  
 from . import services as postservices
 from author import services as authorservices
-from .models import Post, Like, Comment, CommentLike, RemoteLike, RemoteComment
-from author.models import Follower, Profile
-from inbox.models import Inbox
+from .models import Post, Like, Comment, CommentLike, RemoteLike, RemoteComment, RemotePost
+from author.models import Follower, Profile, FollowerRemote
+from inbox.models import Inbox, RemoteInbox
 from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -145,6 +147,17 @@ def view_post(request, post_id):
     follow = Follower.objects.get(profile=request.user.profile)
     friends = follow.get_friends()
 
+    # get remote friends
+    follow_remote = FollowerRemote.objects.filter(following_author=request.user.profile)
+    friends_remote = []
+    for follow_obj in follow_remote:
+        base_url = get_base_url(follow_obj.url)
+        node = Node.objects.get(url=base_url)
+        is_remote_following = authorservices.get_following_from_node(node, request.user.profile.id, follow_obj.url)
+        if is_remote_following['is_follower']:
+            remote_author = authorservices.get_author_from_node(node, follow_obj.url)
+            friends_remote.append(remote_author)
+
     # get likes
     postGet = Post.objects.get(id=post_id)
     likedUser = request.user.profile
@@ -218,24 +231,36 @@ def view_post(request, post_id):
         elif "," in action:
             commentAction = action.split(",")
             commentLiking = commentAction[0]
-            commentIndex = int(commentAction[1])
+            commentIndex = commentAction[1]
             if commentLiking == "like":
                 likeSummary = likedUser.user.username + " liked your comment!"
                 like = CommentLike(summary=likeSummary, author=likedUser,comment=commentsInfo[commentIndex][0])
                 like.save()
                 #inbox.comment_likes.add(like)
-                if commentsInfo[commentIndex][0].author.user.profile != likedUser:
-                    other_inbox = Inbox.objects.get(user=commentsInfo[commentIndex][0].author.user.profile)
+                if commentsInfo[int(commentIndex)][0].author.user.profile != likedUser:
+                    other_inbox = Inbox.objects.get(user=commentsInfo[int(commentIndex)][0].author.user.profile)
                     other_inbox.comment_likes.add(like)
                     other_inbox.save()
                 messages.success(request, ("Comment Liked successfully!"))
             elif commentLiking == "unlike":
-                like = CommentLike.objects.filter(author=likedUser,comment=commentsInfo[commentIndex][0]).delete()
+                like = CommentLike.objects.filter(author=likedUser,comment=commentsInfo[int(commentIndex)][0]).delete()
                 messages.success(request, ("Comment Unliked successfully!"))
+            elif commentLiking == "share":
+                friend_id = commentIndex
+                postservices.send_local_post_to_node(postGet, friend_id, request)
+                messages.success(request, "Shared Post sucessfully!")
 
         inbox.save()
         return redirect("home")
-    return render(request, "view_post.html", {"post":postGet, "likes":likes, "liked":liked, "commentsInfo":commentsInfo, "commentCount":commentCount, "form": form, "friends":friends})
+    return render(request, "view_post.html", 
+                  {"post":postGet, 
+                   "likes":likes, 
+                   "liked":liked, 
+                   "commentsInfo":commentsInfo, 
+                   "commentCount":commentCount, 
+                   "form": form, 
+                   "friends":friends, 
+                   "friends_remote":friends_remote})
 
 @login_required
 def share_post(request, post_id, friend_id):
@@ -252,40 +277,73 @@ def share_post(request, post_id, friend_id):
     return render(request, "share_post.html", {'shared_posts':inbox.get_posts(), 'post':post})
 
 @login_required
+def share_remote_post(request, node, remote_post, friend_id):
+    profile = Profile.objects.get(user_id=friend_id)
+    remote_inbox = RemoteInbox.objects.get(author=profile)
+    new_remote_post = RemotePost.objects.filter(post_id=remote_post)
+    if (len(new_remote_post) == 0):
+        new_remote_post = RemotePost(post_id=remote_post)
+        new_remote_post.save()
+    else:
+        new_remote_post = RemotePost.objects.get(post_id=remote_post)
+    if request.method == "POST":
+        action = request.POST['confirm']
+        if action == 'yes':
+            remote_inbox.posts.add(new_remote_post)
+            remote_inbox.save()
+            return redirect("view_remote_post", node, remote_post)
+    return render(request, "share_remote_post.html", {'post':new_remote_post, 'shared_posts':list(remote_inbox.posts.all()), 'node_name':node})
+
+
+@login_required
 def view_remote_post(request, node, remote_post):
 
     likes = 0
     comment_count = 0
+    node_name = node
+    # get local freinds
+    follow_local = Follower.objects.get(profile=request.user.profile)
+    friends_local = follow_local.get_friends()
 
+    # get remote friends
+    follow_remote = FollowerRemote.objects.filter(following_author=request.user.profile)
+    friends_remote = []
+    for follow_obj in follow_remote:
+        base_url = get_base_url(follow_obj.url)
+        node = Node.objects.get(url=base_url)
+        is_remote_following = authorservices.get_following_from_node(node, request.user.profile.id, follow_obj.url)
+        if is_remote_following['is_follower']:
+            remote_author = authorservices.get_author_from_node(node, follow_obj.url)
+            friends_remote.append(remote_author)
     # get the remote post
-    cur_node = Node.objects.get(name=node)
+    cur_node = Node.objects.get(name=node_name)
     post_details = ""
     node_image = ""
-    # TODO fix func name here and in api/services or add func that takes in node
-    post = get_author_from_link(remote_post)[0]
+    
+    post = postservices.get_post_from_node(cur_node, remote_post)
     if cur_node.name == 'A-Team' and post['image'] != "":
         node_image = post['image']
     else:
-        node_image_data = postservices.get_image_from_node(cur_node, remote_post)
-        if type(node_image_data) == dict and node_image_data['image'] != "":  # our format
-            node_image = node_image_data['image']
-        elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
-            node_image = node_image_data
-    post['published'] = parse_iso8601_time(post['published'])
+      node_image_data = postservices.get_image_from_node(cur_node, remote_post)
+      if type(node_image_data) == dict and node_image_data['image'] != "":  # our format
+          node_image = node_image_data['image']
+      elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
+          node_image = node_image_data
+      post['published'] = parse_iso8601_time(post['published'])
 
-    post_details = post
-
+      post_details = post
+    
     # get remote comments and likes
     comments = []
     comment_list = []
     node_comments_data = postservices.get_comments_from_node(cur_node, post_details['id'])
+
     if type(node_comments_data) == dict and node_comments_data != {}:
         comment_list = node_comments_data['comments']
     elif type(node_comments_data) == list:
         comment_list = node_comments_data
     for comment in comment_list:
-        input_datetime = datetime.strptime(comment['published'], "%Y-%m-%dT%H:%M:%S.%fZ")
-        comment['published'] = input_datetime.strftime("%b. %d, %Y, %I:%M %p")
+        comment['published'] = parse_iso8601_time(comment['published'])
         comments.append(comment)
         comment_count += 1
 
@@ -309,8 +367,12 @@ def view_remote_post(request, node, remote_post):
                 comment = form.save(commit=False)
                 postservices.send_comment_to_node(cur_node, comment, remote_post, request)
                 messages.success(request, ("Commented on post successfully!"))
+        elif "share" in action:
+            friend_id = action.split(",")[1]
+            postservices.send_remote_post_to_node(cur_node, remote_post, friend_id, request)
+            messages.success(request, "Shared Post sucessfully!")
         return redirect("home")
-    return render(request, "view_remote_post.html", {'post_details':post_details, 'image':node_image, 'comments':comments, 'form': form, 'likes':likes, 'comment_count':comment_count})
+    return render(request, "view_remote_post.html", {'post_details':post_details, 'image':node_image, 'comments':comments, 'form': form, 'likes':likes, 'comment_count':comment_count, "friends_local":friends_local, "friends_remote":friends_remote, "node_name":node_name})
 
 def load_github(user : Profile):
     """
@@ -321,7 +383,6 @@ def load_github(user : Profile):
     if (not username):
         return None
     username = username.split("/")[3]
-    print(username)
 
     # GitHub API endpoint for user's public activity feed    
     url = f'https://api.github.com/users/{username}/events/public'
