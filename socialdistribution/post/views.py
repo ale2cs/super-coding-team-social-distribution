@@ -49,7 +49,7 @@ def home_page(request):
                         # get image
                         if node.name == 'A-Team' and post['image'] != "":
                             node_images[post['id']] = post['image']
-                        else:
+                        elif node.name != 'A-Team':
                             node_image_data = postservices.get_image_from_node(node, post['id']) 
                             if node_image_data == {}:
                                 continue

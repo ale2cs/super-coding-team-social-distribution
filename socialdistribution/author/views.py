@@ -170,6 +170,7 @@ def friends_list(request):
         is_remote_following = services.get_following_from_node(node, request.user.profile.id, follow_obj.url)
         if is_remote_following['is_follower']:
             remote_author = services.get_author_from_node(node, follow_obj.url)
+            print(remote_author)
             remote_profiles.append(remote_author)
 
     return render(request, 'friends.html', {'profiles':profiles, 'remote_profiles': remote_profiles})
@@ -179,8 +180,8 @@ def send_remote_follow(request, remote_author, node):
     author_node = Node.objects.get(name=node)
     user_profile = request.user.profile
     serializer = ProfileSerializer(user_profile, context={'request':request})
-    remote_author_data = services.get_author_from_node(author_node, remote_author)
-    if author_node.name == 'A-Team':
+    remote_author_data = services.get_author_from_node(node, remote_author)
+    if node == 'A-Team':
         data = {
             'actor': serializer.data['id'],
             'ojbect': remote_author,
