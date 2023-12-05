@@ -3,15 +3,16 @@ import json
 import uuid
 from django.db import transaction
 from rest_framework.test import APITestCase
-from social.models import Post, Profile
+from post.models import Category, Post
+from author.models import Profile
 from django.contrib.auth.models import User
 from django.utils import timezone
+from api.models import Node
+from api.utils import create_basic_auth_header
 
 mock_post_data = {
     'title': 'NEW title',
     'id': 'id',
-    'source': 'NEW source',
-    'origin': 'NEW origin',
     'description': 'NEW description',
     'contentType': 'text/markdown',
     'content': 'new content',
@@ -24,6 +25,7 @@ mock_post_data = {
         "github": "http://github.com/laracroft",
         "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
     },
+    "categories": [1],
     "visibility": "PUBLIC",
     "unlisted": False,
 }
@@ -36,36 +38,42 @@ class PostApiTest(APITestCase):
         self.post = Post.objects.create(
             title='title',
             id='id',
-            source='source',
-            origin='origin',
             description='description',
             contentType='text/plain',
             content='content',
             author=self.profile
         )
+        self.category = Category.objects.create(name='pop')
+        self.node = Node.objects.create(
+            name = 'node',
+            url = 'http://localhost:8000',
+            username = '123',
+            password = '123'
+        )
 
     def test_should_GET_post_detail(self):
         """Test the GET request for getting a single Post whose ID is POST_ID"""
-        response = self.client.get(f'/service/authors/{self.profile.id}/posts/{self.post.id}')
+        response = self.client.get(f'/authors/{self.profile.id}/posts/{self.post.id}', 
+            headers=create_basic_auth_header(self.node.username, self.node.password))
         self.assertEqual(response.status_code, 201)
 
     def test_should_return_404_GET_post_detail(self):
         """Test the GET request returns 404 for getting a single Post whose ID is POST_ID"""
-        response = self.client.get(f'/service/authors/{self.profile.id}/posts/{uuid.uuid4}')
+        response = self.client.get(f'/authors/{self.profile.id}/posts/{uuid.uuid4}',
+            headers=create_basic_auth_header(self.node.username, self.node.password))
         self.assertEqual(response.status_code, 404)
 
     def test_should_POST_updates_to_post_detail(self):
         """Test POST request for updating a single Post whose ID is POST_ID"""
-        response = self.client.post(f'/service/authors/{self.profile.id}/posts/{self.post.id}', 
+        response = self.client.post(f'/authors/{self.profile.id}/posts/{self.post.id}', 
                                     json.dumps(mock_post_data), 
+                                    headers=create_basic_auth_header(self.node.username, self.node.password),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 200)
 
         self.post.refresh_from_db()
         self.assertEqual(self.post.title, mock_post_data['title'])
         self.assertEqual(self.post.id, mock_post_data['id'])
-        self.assertEqual(self.post.source, mock_post_data['source'])
-        self.assertEqual(self.post.origin, mock_post_data['origin'])
         self.assertEqual(self.post.description, mock_post_data['description'])
         self.assertEqual(self.post.contentType, mock_post_data['contentType'])
         self.assertEqual(self.post.content, mock_post_data['content'])
@@ -74,14 +82,16 @@ class PostApiTest(APITestCase):
 
     def test_should_return_404_POST_post_detail(self):
         """Test POST request returns 404 for getting a post_id which does not exist"""
-        response = self.client.post(f'/service/authors/{self.profile.id}/posts/{uuid.uuid4}', 
-                                    json.dumps(mock_post_data), 
+        response = self.client.post(f'/authors/{self.profile.id}/posts/{uuid.uuid4}', 
+                                    json.dumps(mock_post_data),
+                                    headers=create_basic_auth_header(self.node.username, self.node.password),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 404)
 
     def test_should_DELETE_post_detail(self):
         """Test DELETE request should delete post"""
-        response = self.client.delete(f'/service/authors/{self.profile.id}/posts/{self.post.id}')
+        response = self.client.delete(f'/authors/{self.profile.id}/posts/{self.post.id}',
+                                      headers=create_basic_auth_header(self.node.username, self.node.password),)
         self.assertEqual(response.status_code, 200)
         try:
             post = Post.objects.get(id=self.post.id)
@@ -91,14 +101,16 @@ class PostApiTest(APITestCase):
 
     def test_should_return_404_DELETE_post_detail(self):
         """Test DELETE request should return 404"""
-        response = self.client.delete(f'/service/authors/{self.profile.id}/posts/{uuid.uuid4}')
+        response = self.client.delete(f'/authors/{self.profile.id}/posts/{uuid.uuid4}',
+                                      headers=create_basic_auth_header(self.node.username, self.node.password),)
         self.assertEqual(response.status_code, 404)
 
     def test_should_PUT_post_detail(self):
         """Test PUT request should put a new post with post_id as the id"""
         post_id = 'newID123'
-        response = self.client.put(f'/service/authors/{self.profile.id}/posts/{post_id}', 
+        response = self.client.put(f'/authors/{self.profile.id}/posts/{post_id}', 
                                    json.dumps(mock_post_data),
+                                   headers=create_basic_auth_header(self.node.username, self.node.password),
                                    content_type='application/json')
         self.assertEqual(response.status_code, 201)
 
@@ -110,8 +122,6 @@ class PostApiTest(APITestCase):
         self.assertIsNotNone(post)
         self.assertEqual(post.id, post_id)
         self.assertEqual(post.title, mock_post_data['title'])
-        self.assertEqual(post.source, mock_post_data['source'])
-        self.assertEqual(post.origin, mock_post_data['origin'])
         self.assertEqual(post.description, mock_post_data['description'])
         self.assertEqual(post.contentType, mock_post_data['contentType'])
         self.assertEqual(post.content, mock_post_data['content'])
@@ -124,8 +134,6 @@ class PostApiTest(APITestCase):
         Post.objects.create(
             title='title',
             id=post_id,
-            source='source',
-            origin='origin',
             description='description',
             contentType='text/plain',
             content='content',
@@ -133,8 +141,9 @@ class PostApiTest(APITestCase):
         )
         
         with transaction.atomic():
-            response = self.client.put(f'/service/authors/{self.profile.id}/posts/{post_id}', 
+            response = self.client.put(f'/authors/{self.profile.id}/posts/{post_id}', 
                                    json.dumps(mock_post_data),
+                                   headers=create_basic_auth_header(self.node.username, self.node.password),
                                    content_type='application/json')
             self.assertEqual(response.status_code, 400)
             
@@ -144,15 +153,14 @@ class PostApiTest(APITestCase):
             Post.objects.create(
                 title='title',
                 id='oldId123',
-                source='source',
-                origin='origin',
                 description='description',
                 contentType='text/plain',
                 content='content',
                 author=self.profile,
                 published=timezone.now()-timedelta(days=360)
             )
-            response = self.client.get(f'/service/authors/{self.profile.id}/posts')
+            response = self.client.get(f'/authors/{self.profile.id}/posts',
+                headers=create_basic_auth_header(self.node.username, self.node.password),)
         self.assertEqual(response.status_code, 200)
         
         response_data = response.json()
@@ -161,11 +169,14 @@ class PostApiTest(APITestCase):
     def test_should_return_400_for_invalid_query_param_GET_post_list(self):
         """Test GET request to return status code 400 when an invalid query param is sent"""
         with transaction.atomic():
-            response = self.client.get(f'/service/authors/{self.profile.id}/posts?page=1&size=0')
+            response = self.client.get(f'/authors/{self.profile.id}/posts?page=1&size=0',
+                headers=create_basic_auth_header(self.node.username, self.node.password),)
             self.assertEqual(response.status_code, 400)
-            response = self.client.get(f'/service/authors/{self.profile.id}/posts?page=test')
+            response = self.client.get(f'/authors/{self.profile.id}/posts?page=test',
+                headers=create_basic_auth_header(self.node.username, self.node.password),)
             self.assertEqual(response.status_code, 400)
-            response = self.client.get(f'/service/authors/{self.profile.id}/posts?page=1&size=test')
+            response = self.client.get(f'/authors/{self.profile.id}/posts?page=1&size=test',
+                headers=create_basic_auth_header(self.node.username, self.node.password),)
             self.assertEqual(response.status_code, 400)
             
     def test_should_paginate_GET_post_list(self):
@@ -174,23 +185,23 @@ class PostApiTest(APITestCase):
             Post.objects.create(
                 title='title',
                 id='oldId123',
-                source='source',
-                origin='origin',
                 description='description',
                 contentType='text/plain',
                 content='content',
                 author=self.profile,
                 published=timezone.now()-timedelta(days=360)
             )
-            response = self.client.get(f'/service/authors/{self.profile.id}/posts?page=1&size=1')
+            response = self.client.get(f'/authors/{self.profile.id}/posts?page=1&size=1',
+                headers=create_basic_auth_header(self.node.username, self.node.password),)
             self.assertEqual(response.status_code, 200)
             response_data = response.json()
             self.assertEqual(len(response_data), 1)
             
     def test_should_POST_post_list(self):
         """Test POST request to create a new post with a system generated id"""
-        response = self.client.post(f'/service/authors/{self.profile.id}/posts',
+        response = self.client.post(f'/authors/{self.profile.id}/posts',
                                     json.dumps(mock_post_data),
+                                    headers=create_basic_auth_header(self.node.username, self.node.password),
                                     content_type='application/json')
         self.assertEqual(response.status_code, 201)
         

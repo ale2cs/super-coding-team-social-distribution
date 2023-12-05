@@ -18,11 +18,9 @@
                     You already shared this post.
                 </p>
             {% endif %}
-            <a href="{% url 'view_post' post.id %}" class="btn btn-secondary">Cancel</a>
+            <a href="{% url 'view_remote_post' node=node_name remote_post=post.post_id %}" class="btn btn-secondary">Cancel</a>
         </form>
         {% endif %}
     </div>
-</div>
-
 
 {% endblock content %}

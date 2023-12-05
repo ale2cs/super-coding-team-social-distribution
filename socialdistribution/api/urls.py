@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.Authors.as_view(), name='authors-list'),
+    path('allposts', views.AllPosts.as_view(), name='get-all-posts'),
     path('<str:author_id>', views.Author.as_view(), name='single-author'),
     path('<str:author_id>/posts', views.PostList.as_view(), name='post-list'),
     path('<str:author_id>/posts/<str:post_id>', views.PostDetail.as_view(), name='post-detail'),
