@@ -16,8 +16,11 @@ def get_post_from_node(node, remote_post_id):
     
 def get_posts_from_node(node, remote_author_id):
     try:
+        url = f"{remote_author_id}/posts"
+        if node.name == 'A-Team':
+            url = url + '/'
         response = requests.get(
-                url=f"{remote_author_id}/posts",
+                url=url,
                 headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token)
             )
         return validate_response(response)

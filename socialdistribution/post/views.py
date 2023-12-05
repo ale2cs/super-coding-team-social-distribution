@@ -2,6 +2,7 @@ import json, requests
 from api.utils import get_base_url
 from . import services
 from api.models import Node
+from api.services import get_author_from_link
 from .utils import parse_iso8601_time  
 from . import services as postservices
 from author import services as authorservices
@@ -29,22 +30,33 @@ def home_page(request):
             node_authors_data = authorservices.get_authors_from_node(node)
             if node_authors_data == {}:
                 continue
-            node_authors = node_authors_data['items']
+            if node.name == 'A-Team':
+                node_authors = node_authors_data['results']['items']
+            else:
+                node_authors = node_authors_data['items']
             node_posts = []
             for index, remote_author in enumerate(node_authors):
+                if node.name == 'A-Team':
+                    remote_author['id'] = remote_author['url']
                 node_post_data = postservices.get_posts_from_node(node, remote_author['id'])
                 if isinstance(node_post_data, dict) and node_post_data != {}:
-                    node_post_data = node_post_data['items']
+                    if node.name == 'A-Team':
+                        node_post_data = node_post_data['results']['items']
+                    else:
+                        node_post_data = node_post_data['items']
                 for post in node_post_data:
                     if post['visibility'].lower() == 'public':
                         # get image
-                        node_image_data = postservices.get_image_from_node(node, post['id'])
-                        if node_image_data == {}:
-                            continue
-                        elif type(node_image_data) == dict and node_image_data['image'] != "":  # our format
-                            node_images[post['id']] = node_image_data['image']
-                        elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
-                            node_images[post['id']] = node_image_data
+                        if node.name == 'A-Team' and post['image'] != "":
+                            node_images[post['id']] = post['image']
+                        else:
+                            node_image_data = postservices.get_image_from_node(node, post['id']) 
+                            if node_image_data == {}:
+                                continue
+                            elif type(node_image_data) == dict and node_image_data['image'] != "":  # our format
+                                node_images[post['id']] = node_image_data['image']
+                            elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
+                                node_images[post['id']] = node_image_data
 
                         post['published'] = parse_iso8601_time(post['published'])
                             
@@ -309,14 +321,17 @@ def view_remote_post(request, node, remote_post):
     node_image = ""
     
     post = postservices.get_post_from_node(cur_node, remote_post)
-    node_image_data = postservices.get_image_from_node(cur_node, remote_post)
-    if type(node_image_data) == dict and node_image_data['image'] != "":  # our format
-        node_image = node_image_data['image']
-    elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
-        node_image = node_image_data
-    post['published'] = parse_iso8601_time(post['published'])
-    
-    post_details = post
+    if cur_node.name == 'A-Team' and post['image'] != "":
+        node_image = post['image']
+    else:
+      node_image_data = postservices.get_image_from_node(cur_node, remote_post)
+      if type(node_image_data) == dict and node_image_data['image'] != "":  # our format
+          node_image = node_image_data['image']
+      elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
+          node_image = node_image_data
+      post['published'] = parse_iso8601_time(post['published'])
+
+      post_details = post
     
     # get remote comments and likes
     comments = []
