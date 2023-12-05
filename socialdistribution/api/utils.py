@@ -26,7 +26,7 @@ def validate_paginator_parameters(size, page):
 
     return None, None
   
-def create_basic_auth_header(username, password, token):
+def create_basic_auth_header(username, password, token=None):
     if username == 'a-team' and password == 'a-team':
         return {'Authorization': f'Token {token}'}
     credentials = base64.b64encode(f"{username}:{password}".encode('utf-8')).decode('utf-8')
