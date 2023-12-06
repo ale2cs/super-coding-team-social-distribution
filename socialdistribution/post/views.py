@@ -354,7 +354,9 @@ def view_remote_post(request, node, remote_post):
         node_image = post['image']
     elif cur_node.name != 'A-Team':
         node_image_data = postservices.get_image_from_node(cur_node, remote_post)
-        if type(node_image_data) == dict and node_image_data['image'] != "":  # our format
+        if node_image_data == {}:
+            pass
+        elif type(node_image_data) == dict and node_image_data['image'] != "":  # our format
             node_image = node_image_data['image']
         elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
             node_image = node_image_data

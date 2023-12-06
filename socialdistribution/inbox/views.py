@@ -45,7 +45,10 @@ def inbox(request):
     remote_posts_info = []
     remote_requests = (remote_inbox.requests.all())
     for remote_comment in remote_comments:
-        remote_comment.author = get_author_from_link(remote_comment.author)['displayName']
+        remote_comment.author = get_author_from_link(remote_comment.author)
+        if remote_comment.author == {}:
+            continue
+        remote_comment.author = remote_comment.author['displayName']
     for remote_post in remote_inbox.posts.all():
         node = get_remote_node(remote_post.post_id)
         post = get_post_from_node(node, remote_post.post_id)
