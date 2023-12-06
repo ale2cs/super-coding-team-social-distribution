@@ -17,6 +17,7 @@ from rest_framework.pagination import PageNumberPagination
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .utils import get_field_type, validate_paginator_parameters
+from .services import get_author_from_link
 
 DEFAULT_PAGE_SIZE = 25
 
@@ -293,6 +294,9 @@ class Comments(APIView):
         comment_serializer = CommentSerializer(local_comments, many=True, context={'request': request})
 
         remote_comments = RemoteComment.objects.filter(post_id=post_id)
+        remote_comments = [
+            rc for rc in remote_comments if get_author_from_link(rc.author) != {}
+        ]
         remote_comment_serializer = RemoteCommentSerializer(remote_comments, many=True, context={'request': request})
 
         comments = comment_serializer.data + remote_comment_serializer.data
@@ -324,10 +328,10 @@ class OneComment(APIView):
             comment_serializer = CommentSerializer(comments[0], context={'request': request})
             return Response(comment_serializer.data, status=200)
         remote_comments = RemoteComment.objects.filter(post_id=post_id, id=comment_id)
-        if len(remote_comments) != 0:
+        if len(remote_comments) != 0 and get_author_from_link(remote_comments[0].author) != {}:
             remote_comment_serializer = RemoteCommentSerializer(remote_comments[0], context={'request': request})
             return Response(remote_comment_serializer.data, status=200) 
-        return Response({'message': 'invalid comment_id'})
+        return Response({'message': 'invalid comment_id'}, status=404)
 
 
 
@@ -341,6 +345,9 @@ class LikesOnPost(APIView):
         likes = Like.objects.filter(post_id=post_id)
         like_serializer = LikeSerializer(likes, many=True, context={'request': request})
         remote_likes = RemoteLike.objects.filter(post_id=post_id)
+        remote_likes = [
+            rl for rl in remote_likes if get_author_from_link(rl.author) != {}
+        ]
         remote_like_serializer = RemoteLikeSerializer(remote_likes, many=True, context={'request': request})
         likes_on_post = like_serializer.data + remote_like_serializer.data
         return Response(likes_on_post, status=200)

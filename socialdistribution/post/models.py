@@ -28,10 +28,15 @@ class Post(models.Model):
         Returns list of comments on the post ordered by date it was published, 
         as well as returns the number of comments on the post,
         """
-        comments = Comment.objects.filter(post=self).order_by("-published")
-        remote_comments = RemoteComment.objects.filter(post=self)
+        comments = list(Comment.objects.filter(post=self).order_by("-published"))
+        remote_comments = list(RemoteComment.objects.filter(post=self))
 
-        # get author displayName from all remote comments
+        # Filter out remote_comments with empty author
+        remote_comments = [
+            rc for rc in remote_comments if get_author_from_link(rc.author) != {}
+        ]
+
+        # Get author displayName from all remaining remote comments
         for remote_comment in remote_comments:
             remote_comment.author = get_author_from_link(remote_comment.author)['displayName']
 
@@ -44,7 +49,11 @@ class Post(models.Model):
         """
         Returns the number of likes on the post
         """
-        likes = list(Like.objects.filter(post=self)) + list(RemoteLike.objects.filter(post=self))
+        remote_likes = list(RemoteLike.objects.filter(post=self))
+        remote_likes = [
+            rl for rl in remote_likes if get_author_from_link(rl.author) != {}
+        ]
+        likes = list(Like.objects.filter(post=self)) + remote_likes
         return len(likes)
 
 class RemotePost(models.Model):
