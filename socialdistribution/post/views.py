@@ -101,7 +101,6 @@ def home_page(request):
                                 print('IS A-TEAM')
                                 continue
                             postservices.send_local_post_to_node(post, follow_obj.url, request) 
-                            print('SENT POST')
                     elif post.visibility == "friends": 
                         follow_remote = FollowerRemote.objects.filter(following_author=request.user.profile)
                         for follow_obj in follow_remote:
@@ -330,15 +329,15 @@ def view_remote_post(request, node, remote_post):
     friends_local = follow_local.get_friends()
 
     # get remote friends
-    follow_remote = FollowerRemote.objects.filter(following_author=request.user.profile)
-    friends_remote = []
-    for follow_obj in follow_remote:
-        base_url = get_base_url(follow_obj.url)
-        node = Node.objects.get(url=base_url)
-        is_remote_following = authorservices.get_following_from_node(node, request.user.profile.id, follow_obj.url)
-        if is_remote_following['is_follower']:
-            remote_author = authorservices.get_author_from_node(node, follow_obj.url)
-            friends_remote.append(remote_author)
+    # follow_remote = FollowerRemote.objects.filter(following_author=request.user.profile)
+    # friends_remote = []
+    # for follow_obj in follow_remote:
+    #     base_url = get_base_url(follow_obj.url)
+    #     node = Node.objects.get(url=base_url)
+    #     is_remote_following = authorservices.get_following_from_node(node, request.user.profile.id, follow_obj.url)
+    #     if is_remote_following['is_follower']:
+    #         remote_author = authorservices.get_author_from_node(node, follow_obj.url)
+    #         friends_remote.append(remote_author)
     # get the remote post
     cur_node = Node.objects.get(name=node_name)
     post_details = ""
@@ -365,7 +364,7 @@ def view_remote_post(request, node, remote_post):
     comment_list = []
     
     node_comments_data = postservices.get_comments_from_node(cur_node, post['id'])
-    print(node_comments_data)
+    # print(node_comments_data)
 
     if type(node_comments_data) == dict and node_comments_data != {}:
         if cur_node.name == 'A-Team':
@@ -400,12 +399,12 @@ def view_remote_post(request, node, remote_post):
                 comment = form.save(commit=False)
                 postservices.send_comment_to_node(cur_node, comment, remote_post, request)
                 messages.success(request, ("Commented on post successfully!"))
-        elif "share" in action:
-            friend_id = action.split(",")[1]
-            postservices.send_remote_post_to_node(cur_node, remote_post, friend_id, request)
-            messages.success(request, "Shared Post sucessfully!")
+        # elif "share" in action:
+        #     friend_id = action.split(",")[1]
+        #     postservices.send_remote_post_to_node(cur_node, remote_post, friend_id, request)
+        #     messages.success(request, "Shared Post sucessfully!")
         return redirect("home")
-    return render(request, "view_remote_post.html", {'post_details':post, 'image':node_image, 'comments':comments, 'form': form, 'likes':likes, 'comment_count':comment_count, "friends_local":friends_local, "friends_remote":friends_remote, "node_name":node_name})
+    return render(request, "view_remote_post.html", {'post_details':post, 'image':node_image, 'comments':comments, 'form': form, 'likes':likes, 'comment_count':comment_count, "friends_local":friends_local, "node_name":node_name})
 
 def load_github(user : Profile):
     """
