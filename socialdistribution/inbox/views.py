@@ -2,6 +2,7 @@ from django.shortcuts import render
 from author.models import Follower, Profile, FriendFollowRequest
 from inbox.models import Inbox, RemoteInbox
 from post.models import Post
+from post.services import get_post_from_node
 from api.services import get_author_from_link, get_remote_node
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -46,9 +47,15 @@ def inbox(request):
     for remote_comment in remote_comments:
         remote_comment.author = get_author_from_link(remote_comment.author)['displayName']
     for remote_post in remote_inbox.posts.all():
-        post = get_author_from_link(remote_post.post_id)
-        post['published'] = parse_iso8601_time(post['published'])
         node = get_remote_node(remote_post.post_id)
+        post = get_post_from_node(node, remote_post.post_id)
+        if post == {}:
+            continue
+        if node.name == 'A-Team':
+            post = post[0]
+            post['published'] = parse_iso8601_time(post['published'])
+        else:
+            post['published'] = parse_iso8601_time(post['published'])
         remote_posts_info.append([post, node])
         
         #print(remote_post.post_id)

@@ -43,8 +43,11 @@ def get_image_from_node(node, remote_post_id):
 
 def get_comments_from_node(node, remote_post_id):
     try:
+        url = f"{remote_post_id}/comments"
+        if node.name == 'A-Team':
+            url = url + '/'
         response = requests.get(
-                url=f"{remote_post_id}/comments",
+                url = url,
                 headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token)
             )
         return validate_response(response)
@@ -54,8 +57,11 @@ def get_comments_from_node(node, remote_post_id):
 
 def get_likes_from_node(node, remote_post_id):
     try:
+        url = f"{remote_post_id}/likes"
+        if node.name == 'A-Team':
+            url = url + '/'
         response = requests.get(
-                url=f"{remote_post_id}/likes",
+                url=url,
                 headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token)
             )
         return validate_response(response)
@@ -66,17 +72,28 @@ def get_likes_from_node(node, remote_post_id):
 def send_like_to_node(node, remote_post, request):
     try:
         remote_author_id = remote_post.split('/')[4]
+        remote_post_id = remote_post.split('/')[6]
+
+        if node.name == 'A-Team':
+            url = f'{node.url}/authors/{remote_author_id}/posts/{remote_post_id}/likes/'
+        else:
+            url = f'{node.url}/authors/{remote_author_id}/inbox'
         author = request.user.profile
         serializer = ProfileSerializer(author, context={'request': request})
-        json_data = {
-            "@context": "https://www.w3.org/ns/activitystreams",
-            "summary": f"{author.user.username} likes your post",         
-            "type": "like",
-            "author": serializer.data,
-            "object": remote_post
-        }
+        if node.name == 'A-Team':
+            json_data = {
+                "author_id": serializer.data['id'].split('/')[-1]
+            }
+        else:
+            json_data = {
+                "@context": "https://www.w3.org/ns/activitystreams",
+                "summary": f"{author.user.username} likes your post",         
+                "type": "like",
+                "author": serializer.data,
+                "object": remote_post
+            }
         response = requests.post(
-            url=f'{node.url}/authors/{remote_author_id}/inbox', 
+            url=url,
             headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token),
             json=json_data,
 
@@ -89,18 +106,31 @@ def send_like_to_node(node, remote_post, request):
 def send_comment_to_node(node, comment, remote_post, request):
     try:
         remote_author_id = remote_post.split('/')[4]
+        remote_post_id = remote_post.split('/')[6]
+
+        if node.name == 'A-Team':
+            url = f'{node.url}/authors/{remote_author_id}/posts/{remote_post_id}/comments/'
+        else:
+            url = f'{node.url}/authors/{remote_author_id}/inbox'
         author = request.user.profile
         serializer = ProfileSerializer(author, context={'request': request})
-        json_data = {
-            "type": "comment",
-            "author": serializer.data,
-            "comment": comment.content,
-            "contentType": comment.contentType, 
-            "published": comment.published,
-            "id": remote_post
-        }
+        if node.name == 'A-Team':
+            json_data = {
+                "author_id": serializer.data['id'].split('/')[-1],
+                "contentType": 'text/plain',
+                "comment": comment.content
+            }
+        else:
+            json_data = {
+                "type": "comment",
+                "author": serializer.data,
+                "comment": comment.content,
+                "contentType": comment.contentType, 
+                "published": comment.published,
+                "id": remote_post
+            }
         response = requests.post(
-            url=f'{node.url}/authors/{remote_author_id}/inbox', 
+            url=url,
             headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token),
             json=json_data,
 

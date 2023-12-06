@@ -107,7 +107,7 @@ def home_page(request):
                         for follow_obj in follow_remote:
                             base_url = get_base_url(follow_obj.url)
                             node = Node.objects.get(url=base_url)
-                            is_remote_following = services.get_following_from_node(node, request.user.profile.id, follow_obj.url)
+                            is_remote_following = authorservices.get_following_from_node(node, request.user.profile.id, follow_obj.url)
                             if is_remote_following['is_follower']:
                                 if node.name == 'A-Team':
                                     # TODO
@@ -344,34 +344,43 @@ def view_remote_post(request, node, remote_post):
     post_details = ""
     node_image = ""
     
+    if cur_node.name == 'A-Team':
+        remote_post = remote_post + '/'
     post = postservices.get_post_from_node(cur_node, remote_post)
+    if cur_node.name == 'A-Team':
+        post = post[0]
+
     if cur_node.name == 'A-Team' and post['image'] != "":
         node_image = post['image']
-    else:
-      node_image_data = postservices.get_image_from_node(cur_node, remote_post)
-      if type(node_image_data) == dict and node_image_data['image'] != "":  # our format
-          node_image = node_image_data['image']
-      elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
-          node_image = node_image_data
-      post['published'] = parse_iso8601_time(post['published'])
-
-      post_details = post
+    elif cur_node.name != 'A-Team':
+        node_image_data = postservices.get_image_from_node(cur_node, remote_post)
+        if type(node_image_data) == dict and node_image_data['image'] != "":  # our format
+            node_image = node_image_data['image']
+        elif type(node_image_data) == str and node_image_data != "":  # packet pirate format
+            node_image = node_image_data
+        post['published'] = parse_iso8601_time(post['published'])
     
     # get remote comments and likes
     comments = []
     comment_list = []
-    node_comments_data = postservices.get_comments_from_node(cur_node, post_details['id'])
+    
+    node_comments_data = postservices.get_comments_from_node(cur_node, post['id'])
+    print(node_comments_data)
 
     if type(node_comments_data) == dict and node_comments_data != {}:
-        comment_list = node_comments_data['comments']
+        if cur_node.name == 'A-Team':
+            comment_list = node_comments_data['results']['comments']
+        else:
+            comment_list = node_comments_data['comments']
     elif type(node_comments_data) == list:
-        comment_list = node_comments_data
+            comment_list = node_comments_data
+            
     for comment in comment_list:
         comment['published'] = parse_iso8601_time(comment['published'])
         comments.append(comment)
         comment_count += 1
 
-    node_likes_data = postservices.get_likes_from_node(cur_node, post_details['id'])
+    node_likes_data = postservices.get_likes_from_node(cur_node, post['id'])
     likes += len(node_likes_data)
 
     # create local comments and likes
@@ -396,7 +405,7 @@ def view_remote_post(request, node, remote_post):
             postservices.send_remote_post_to_node(cur_node, remote_post, friend_id, request)
             messages.success(request, "Shared Post sucessfully!")
         return redirect("home")
-    return render(request, "view_remote_post.html", {'post_details':post_details, 'image':node_image, 'comments':comments, 'form': form, 'likes':likes, 'comment_count':comment_count, "friends_local":friends_local, "friends_remote":friends_remote, "node_name":node_name})
+    return render(request, "view_remote_post.html", {'post_details':post, 'image':node_image, 'comments':comments, 'form': form, 'likes':likes, 'comment_count':comment_count, "friends_local":friends_local, "friends_remote":friends_remote, "node_name":node_name})
 
 def load_github(user : Profile):
     """

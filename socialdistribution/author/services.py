@@ -33,15 +33,14 @@ def get_author_from_node(node, url):
 
 def get_following_from_node(node, author_id, remote_author_id):
     try:
+        url = f"{remote_author_id}/followers/{author_id}"
         if node.name == 'A-Team':
-            url = f"{remote_author_id}following/{author_id}/"
-        else:
-            url = f"{remote_author_id}/followers/{author_id}"
+            url = url + '/'
         response = requests.get(
                 url=url,
                 headers=create_basic_auth_header(node.outbound_username, node.outbound_password, node.token)
             )
-        if node.name == 'A-Team' and response.status_code == 400:
+        if node.name == 'A-Team' and response.status_code in [404, 400]:
             result = {'is_follower': False}
         elif node.name == 'A-Team' and response.status_code == 200:
              result = {'is_follower': True}

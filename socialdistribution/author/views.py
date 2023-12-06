@@ -182,7 +182,7 @@ def send_remote_follow(request, remote_author, node):
     remote_author_data = services.get_author_from_node(author_node, remote_author)
     if node == 'A-Team':
         data = {
-            'actor': serializer.data['id'],
+            'actor': serializer.data['id'].split('/')[-1],
             'ojbect': remote_author,
         }
     else:
